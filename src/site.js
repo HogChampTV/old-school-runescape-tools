@@ -1,0 +1,11 @@
+/**
+ * Registry of the tools on the site. The NavBar and the home page cards both
+ * read from here, so adding a tool is one entry plus its route in App.jsx.
+ */
+export const TOOLS = [
+  {
+    path: '/tzhaar-name-generator',
+    name: 'TzHaar Name Generator',
+    blurb: 'Hatches volcanic creature names from TzHaar syllables. Has a slider you will regret.',
+  },
+];
