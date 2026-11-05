@@ -19,7 +19,16 @@ export default function HomePage() {
         ))}
         <div className="home-card placeholder">
           <h2>More to come</h2>
-          <p>Calculators and other small tools are planned. Suggestions welcome on GitHub.</p>
+          <p>
+            Calculators and other small tools are planned.{' '}
+            <a
+              href="https://github.com/HogChampTV/old-school-runescape-tools/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Suggestions welcome
+            </a>.
+          </p>
         </div>
       </div>
     </div>

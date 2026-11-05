@@ -54,6 +54,16 @@
   opacity: 0.65;
 }
 
+.home-card.placeholder a {
+  color: #d4af37;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-card.placeholder a:hover {
+  text-decoration: underline;
+}
+
 .home-card.placeholder:hover {
   border-color: #2e2920;
   transform: none;
