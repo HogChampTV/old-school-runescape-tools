@@ -9,7 +9,7 @@ export default function NavBar() {
     <nav className="navbar">
       <NavLink to="/" end className="navbar-brand">
         <img src={`${import.meta.env.BASE_URL}favicon.png`} alt="" className="navbar-logo" />
-        <span>OSRS Tools</span>
+        <span>Old School RuneScape Tools</span>
       </NavLink>
       <div className="navbar-links">
         <NavLink to="/" end className={link}>Home</NavLink>

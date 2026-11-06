@@ -187,7 +187,7 @@ export default function TzhaarNameGeneratorPage() {
         <div className="hatchery-name">{egg.name}</div>
         <div className="hatchery-stats">
           <span className={egg.name.length > OSRS_MAX ? 'over' : ''}>
-            <b>{egg.name.length}</b>/{OSRS_MAX} chars{egg.name.length > OSRS_MAX ? ', too long for OSRS' : ''}
+            <b>{egg.name.length}</b>/{OSRS_MAX} chars{egg.name.length > OSRS_MAX ? ', too long for Old School RuneScape' : ''}
           </span>
           <span>Combat level <b>{egg.lvl}</b></span>
           <span>{egg.where}, wave <b>{egg.wave}</b></span>
@@ -220,7 +220,7 @@ export default function TzhaarNameGeneratorPage() {
         </div>
         <label className="hatchery-check" htmlFor="hatchery-fit">
           <input id="hatchery-fit" type="checkbox" checked={fit} onChange={(e) => setFit(e.target.checked)} />
-          <span>Fit the OSRS display-name limit ({OSRS_MAX} characters). Off = longer, dumber, unusable.</span>
+          <span>Fit the Old School RuneScape display-name limit ({OSRS_MAX} characters). Off = longer, dumber, unusable.</span>
         </label>
         <div className="hatchery-actions start">
           <button type="button" className="hatchery-btn" onClick={() => spawn(10)}>Spawn a wave of 10</button>
@@ -244,7 +244,7 @@ export default function TzhaarNameGeneratorPage() {
 
       <p className="hatchery-credit">
         Syllables lifted from the real roster (Tz-Kih, Yt-MejKot, Jal-AkRek-Ket, JalTok-Jad) on the{' '}
-        <a href="https://oldschool.runescape.wiki/w/Volcanic_creatures" target="_blank" rel="noopener noreferrer">OSRS Wiki</a>. Everything else is your fault.
+        <a href="https://oldschool.runescape.wiki/w/Volcanic_creatures" target="_blank" rel="noopener noreferrer">Old School RuneScape Wiki</a>. Everything else is your fault.
       </p>
       </div>
     </div>

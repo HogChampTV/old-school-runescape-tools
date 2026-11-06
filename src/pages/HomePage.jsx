@@ -7,7 +7,7 @@ export default function HomePage() {
     <div className="page-content home">
       <header className="home-head">
         <h1>Old School RuneScape Tools</h1>
-        <p>Small browser tools for OSRS. Free, no signup, nothing to install.</p>
+        <p>Small browser tools for Old School RuneScape. Free, no signup, nothing to install.</p>
       </header>
 
       <div className="home-cards">
