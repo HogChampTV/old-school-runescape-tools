@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fetch:loadout-data": "node scripts/fetch-loadout-data.mjs",
+    "dump:items": "node scripts/dump-items.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -15,6 +17,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "pngjs": "^7.0.0",
+    "seek-bzip": "^2.0.0",
     "vite": "^6.3.5"
   }
 }
