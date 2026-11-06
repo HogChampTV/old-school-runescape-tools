@@ -1,5 +1,7 @@
 node_modules/
 dist/
+scripts/.icon-cache/
+scripts/.cache-dump/
 *.log
 .DS_Store
 .env

@@ -1,0 +1,274 @@
+.loadout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loadout-head h2 {
+  margin: 0 0 0.4rem;
+  color: #d4af37;
+}
+
+.loadout-head p {
+  margin: 0;
+  color: #aaa;
+  font-size: 0.9rem;
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.loadout-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.loadout-panel {
+  background: #2b241b;
+  border: 1px solid #4d4234;
+  border-radius: 6px;
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loadout-panel h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #d4af37;
+}
+
+/* ----- slots ----- */
+
+.loadout-slot {
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3e3529;
+  border: 2px solid;
+  border-color: #241f17 #55493a #55493a #241f17;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+.loadout-slot:hover {
+  background: #4a4030;
+}
+
+.loadout-slot.filled:hover {
+  outline: 1px solid rgba(212, 175, 55, 0.6);
+}
+
+.loadout-slot-label {
+  font-size: 0.5rem;
+  color: #70634e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.loadout-icon {
+  display: inline-block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  flex: none;
+}
+
+/* ----- equipment panel ----- */
+
+.loadout-gear {
+  display: grid;
+  grid-template-areas:
+    '.      head   .'
+    'cape   neck   ammo'
+    'weapon body   shield'
+    '.      legs   .'
+    'hands  feet   ring';
+  gap: 6px;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.gear-head { grid-area: head; }
+.gear-cape { grid-area: cape; }
+.gear-neck { grid-area: neck; }
+.gear-ammo { grid-area: ammo; }
+.gear-weapon { grid-area: weapon; }
+.gear-body { grid-area: body; }
+.gear-shield { grid-area: shield; }
+.gear-legs { grid-area: legs; }
+.gear-hands { grid-area: hands; }
+.gear-feet { grid-area: feet; }
+.gear-ring { grid-area: ring; }
+
+/* ----- inventory panel ----- */
+
+.loadout-inv {
+  display: grid;
+  grid-template-columns: repeat(4, 44px);
+  gap: 5px;
+  padding: 0.5rem;
+  background: #4c4132;
+  border: 2px solid;
+  border-color: #241f17 #5d5142 #5d5142 #241f17;
+  border-radius: 4px;
+}
+
+.loadout-inv .loadout-slot {
+  background: #574b39;
+  border-color: #453b2c #655741 #655741 #453b2c;
+}
+
+.loadout-inv .loadout-slot:hover {
+  background: #645640;
+}
+
+.loadout-inv-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #888;
+  font-size: 0.75rem;
+}
+
+/* ----- search panel ----- */
+
+.loadout-search {
+  flex: 1;
+  min-width: 260px;
+  max-width: 100%;
+}
+
+.loadout-search input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1f1a13;
+  border: 1px solid #4d4234;
+  border-radius: 4px;
+  color: #f0f0f0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.loadout-search input:focus {
+  outline: none;
+  border-color: #d4af37;
+}
+
+.loadout-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.loadout-results .empty {
+  color: #777;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.loadout-results button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: #ddd;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.loadout-results button:hover {
+  background: #3e3529;
+}
+
+.loadout-results .n {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loadout-results .s {
+  flex: none;
+  font-size: 0.65rem;
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 3px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ----- buttons / misc ----- */
+
+.loadout-btn {
+  background: #3e3529;
+  border: 1px solid #5a4d3a;
+  border-radius: 4px;
+  color: #ddd;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.loadout-btn:hover {
+  background: #4a4030;
+  border-color: #d4af37;
+}
+
+.loadout-btn.primary {
+  background: #d4af37;
+  border-color: #d4af37;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.loadout-btn.primary:hover {
+  background: #e8c84a;
+}
+
+.loadout-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.loadout-error {
+  color: #d08770;
+}
+
+.loadout-credit {
+  color: #777;
+  font-size: 0.75rem;
+  margin: 0;
+  max-width: 70ch;
+}
+
+.loadout-credit a {
+  color: #d4af37;
+}
+
+@media (max-width: 720px) {
+  .loadout-panels {
+    justify-content: center;
+  }
+}

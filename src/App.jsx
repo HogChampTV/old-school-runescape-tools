@@ -3,6 +3,7 @@ import NavBar from './components/NavBar';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import TzhaarNameGeneratorPage from './pages/tools/TzhaarNameGeneratorPage';
+import LoadoutCreatorPage from './pages/tools/LoadoutCreatorPage';
 import './App.css';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/tzhaar-name-generator" element={<TzhaarNameGeneratorPage />} />
+          <Route path="/loadout-creator" element={<LoadoutCreatorPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

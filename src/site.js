@@ -8,4 +8,9 @@ export const TOOLS = [
     name: 'TzHaar Name Generator',
     blurb: 'Hatches volcanic creature names from TzHaar syllables. Has a slider you will regret.',
   },
+  {
+    path: '/loadout-creator',
+    name: 'Loadout Creator',
+    blurb: 'Plan an equipment and inventory setup, then share it as a link. No bank PIN required.',
+  },
 ];
