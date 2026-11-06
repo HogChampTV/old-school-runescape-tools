@@ -47,6 +47,25 @@ const NAME_BLOCKLIST = /\((Last Man Standing|Deadman|beta)\)/i;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Equipment stats live in the item's cache params (Jagex ships them since 2023).
+// param id -> position in the stats tuple:
+//   attack stab/slash/crush/magic/ranged (0-4), defence stab/slash/crush/magic/ranged (5-9),
+//   melee strength (10), ranged strength (12), magic damage in tenths of a % (299),
+//   prayer (11), attack speed in ticks (14)
+const STAT_PARAMS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 299, 11, 14];
+
+// stats tuple = the 15 values above + the weapon category (for attack styles),
+// with trailing zeros trimmed. null when the item has nothing to report.
+function statsOf(def, slot) {
+  if (slot < 0) return null;
+  const p = def.params ?? {};
+  const stats = STAT_PARAMS.map((k) => p[k] | 0);
+  const isWeapon = slot === SLOT_CODE.weapon || slot === SLOT_CODE['2h'];
+  stats.push(isWeapon ? def.category | 0 : 0);
+  while (stats.length && stats[stats.length - 1] === 0) stats.pop();
+  return stats.length ? stats : null;
+}
+
 function slotNameOf(def) {
   if (def.wearPos1 === 3 && def.wearPos2 === 5) return '2h';
   return WEAR_POS_TO_SLOT[def.wearPos1];
@@ -80,7 +99,7 @@ async function main() {
     const slot = overrideSlot(def.name) ?? SLOT_CODE[slotNameOf(def)] ?? -1;
     if (!def.geTradeable && slot < 0 && !include.has(key)) continue;
     const prev = byName.get(key);
-    if (!prev || def.id < prev.id) byName.set(key, { id: def.id, name: def.name, slot });
+    if (!prev || def.id < prev.id) byName.set(key, { id: def.id, name: def.name, slot, stats: statsOf(def, slot) });
   }
   for (const wanted of overrides.includeByName) {
     if (!byName.has(wanted.toLowerCase())) console.warn(`  include not found in game data: "${wanted}"`);
@@ -140,7 +159,7 @@ async function main() {
 
   // Keep the previous `updated` date when nothing changed, so a re-run on
   // the same game build produces byte-identical output (and CI commits nothing).
-  const outItems = finalItems.map((it) => [it.id, it.name, it.slot]);
+  const outItems = finalItems.map((it) => (it.stats ? [it.id, it.name, it.slot, it.stats] : [it.id, it.name, it.slot]));
   let updated = new Date().toISOString().slice(0, 10);
   try {
     const prev = JSON.parse(fs.readFileSync(OUT_DATA, 'utf8'));
@@ -153,7 +172,7 @@ async function main() {
   fs.writeFileSync(
     OUT_DATA,
     JSON.stringify({
-      v: 1,
+      v: 2,
       updated,
       tile: { w: TILE_W, h: TILE_H },
       cols: COLS,

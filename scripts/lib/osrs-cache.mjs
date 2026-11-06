@@ -256,7 +256,7 @@ export function decodeItem(id, buf) {
     else if (op === 75) s.i16(); // weight
     else if (op >= 78 && op <= 79) s.u16();
     else if (op >= 90 && op <= 93) s.u16();
-    else if (op === 94) s.u16(); // category
+    else if (op === 94) def.category = s.u16();
     else if (op === 95) s.u16();
     else if (op === 97) s.u16(); // noted id
     else if (op === 98) def.notedTemplate = s.u16();
