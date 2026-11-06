@@ -2,6 +2,7 @@ node_modules/
 dist/
 scripts/.icon-cache/
 scripts/.cache-dump/
+.claude/
 *.log
 .DS_Store
 .env
