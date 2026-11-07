@@ -134,7 +134,10 @@ export const toaRaidLevel = (invos) => invos.reduce((n, name) => n + (TOA_RL.get
 const ENTRY_150 = ['Softcore Run', 'Jog for It', 'Need Less Help?', 'Pathseeker', 'Walk the Path', 'Overly Draining', 'Arterial Spray', 'Blood Thinners'];
 const EXPERT_300 = ['Hardcore Run', 'Sprint for It', 'No Help Needed', 'Pathfinder', 'Quiet Prayers', 'On a Diet', 'Overly Draining', 'Not Just a Head', 'Upset Stomach', 'Blood Thinners', 'Stay Vigilant', 'Double Trouble', 'Mind the Gap!', 'Gotta Have Faith', 'Ancient Haste', 'Acceleration', 'Penetration'];
 const LEVEL_405 = [...EXPERT_300, 'Walk the Path', 'Overclocked', 'Overclocked 2', 'Boulderdash', 'Blowing Mud', 'Lively Larvae', 'Keep Back'];
+const LEVEL_425 = [...LEVEL_405, 'Aerial Assault', 'Shaking Things Up'];
 const LEVEL_450 = [...LEVEL_405, 'Dehydration', 'Medic!'];
+// Insanity replaces Overclocked 1+2 (they're its lesser versions).
+const LEVEL_500 = [...LEVEL_450.filter((n) => n !== 'Overclocked' && n !== 'Overclocked 2'), 'Insanity', 'Aerial Assault', 'Shaking Things Up'];
 const LEVEL_600 = TOA_INVOCATIONS.flatMap((g) => (g.exclusive ? [g.options[g.options.length - 1][0]] : g.options.map((o) => o[0])));
 
 // Monster HP (and so the damage you deal, and so your points) grows 2% per
@@ -145,7 +148,9 @@ export const TOA_PRESETS = [
   { label: 'Entry (150)', invos: ENTRY_150 },
   { label: 'Expert (300)', invos: EXPERT_300 },
   { label: 'High invo (405)', invos: LEVEL_405 },
+  { label: 'Efficient (425)', invos: LEVEL_425 },
   { label: 'Pet hunter (450)', invos: LEVEL_450 },
+  { label: 'Insanity (500)', invos: LEVEL_500 },
   { label: 'Everything on (600)', invos: LEVEL_600 },
 ];
 

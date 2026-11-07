@@ -611,6 +611,57 @@
   overflow: hidden;
 }
 
+/* Chronological purple log for bulk runs: which raid number paid out. */
+.rl-many-log {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px;
+  width: min(340px, 100%);
+  max-height: 130px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid #4d4234;
+  border-radius: 5px;
+  animation: rl-banner 0.4s ease-out both;
+}
+
+.rl-many-log li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: #d9a8ff;
+}
+
+.rl-many-log li .loadout-icon {
+  transform: scale(0.6);
+  transform-origin: left center;
+  margin-right: -14px;
+  flex: none;
+}
+
+.rl-many-log .n {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rl-many-log .who {
+  color: #9c8a63;
+  font-size: 0.66rem;
+}
+
+.rl-many-log .kc {
+  color: #776a52;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .rl-dry-banner,
 .rl-many-head {
   position: relative;

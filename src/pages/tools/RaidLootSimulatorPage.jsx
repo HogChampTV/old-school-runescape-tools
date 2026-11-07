@@ -287,6 +287,7 @@ export default function RaidLootSimulatorPage() {
 
   const setValue = (key, v, also) => setValues((prev) => ({ ...prev, [raidId]: { ...prev[raidId], [key]: v, ...(also ?? {}) } }));
 
+  // uniques: [{ name, at }] where `at` is the completion within this batch.
   const record = useCallback((completions, uniques, pets) => {
     setStats((prev) => {
       const s = { ...(prev[statsKey] ?? emptyStats()) };
@@ -294,12 +295,11 @@ export default function RaidLootSimulatorPage() {
       s.kc += completions;
       s.pets += pets;
       s.uniqueCount += uniques.length;
-      // Log the uniques at their (approximate, for bulk) kill counts.
-      uniques.forEach((name, i) => {
-        s.uniques = [...s.uniques, { name, kc: startKc + (uniques.length === completions ? i + 1 : completions) }].slice(-40);
-      });
-      s.dry = uniques.length ? 0 : s.dry + completions;
-      if (uniques.length && completions > uniques.length) s.dry = 0;
+      for (const u of uniques) s.uniques = [...s.uniques, { name: u.name, kc: startKc + u.at }].slice(-40);
+      // The dry streak picks up after the batch's last purple.
+      s.dry = uniques.length
+        ? completions - Math.max(...uniques.map((u) => u.at))
+        : s.dry + completions;
       return { ...prev, [statsKey]: s };
     });
   }, [statsKey]);
@@ -317,7 +317,7 @@ export default function RaidLootSimulatorPage() {
 
   const openOne = () => {
     const run = runRaid(effRaid, effValues);
-    record(1, run.unique ? [run.unique] : [], run.pet ? 1 : 0);
+    record(1, run.unique ? [{ name: run.unique, at: 1 }] : [], run.pet ? 1 : 0);
     reveal({ kind: 'one', run });
   };
 
@@ -336,7 +336,7 @@ export default function RaidLootSimulatorPage() {
       tries++;
       if (run.pet) pets++;
     } while (!run.unique && tries < UNTIL_CAP);
-    record(tries, run.unique ? [run.unique] : [], pets);
+    record(tries, run.unique ? [{ name: run.unique, at: tries }] : [], pets);
     reveal({ kind: 'until', run, tries });
   };
 
@@ -522,6 +522,21 @@ export default function RaidLootSimulatorPage() {
                       );
                     })}
                   </div>
+                )}
+                {result.uniques.length > 0 && (
+                  <ul className="rl-many-log">
+                    {result.uniques.map((u, i) => {
+                      const ix = nameIndex.get(u.name.toLowerCase());
+                      return (
+                        <li key={i}>
+                          {ix != null && data && <ItemIcon data={data} index={ix} />}
+                          <span className="n">{u.name}</span>
+                          {u.recipient && <span className="who">{u.recipient}</span>}
+                          <span className="kc">raid {u.at.toLocaleString()}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
                 <div className="rl-loot">
                   {sortedTotals.map((l, i) => (

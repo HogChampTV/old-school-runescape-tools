@@ -88,7 +88,8 @@ export function runMany(config, values, n, rng = Math.random) {
   let last = null;
   for (let i = 0; i < n; i++) {
     last = runRaid(config, values, rng);
-    if (last.unique) uniques.push(last.unique);
+    // at = which completion of the batch (1-based) the purple landed on.
+    if (last.unique) uniques.push({ name: last.unique, at: i + 1, recipient: last.recipient });
     if (last.recipient) recipients.set(last.recipient, [...(recipients.get(last.recipient) ?? []), last.unique]);
     if (last.pet) pets++;
     for (const l of last.loot) {
