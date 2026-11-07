@@ -2,6 +2,11 @@
   "name": "old-school-runescape-tools",
   "version": "1.0.0",
   "description": "Small browser tools for Old School RuneScape",
+  "author": "HogChampTV (https://github.com/HogChampTV)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HogChampTV/old-school-runescape-tools.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
