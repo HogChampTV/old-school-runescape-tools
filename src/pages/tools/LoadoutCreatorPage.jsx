@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { ST, statOf, weaponStyleSet, PRAYERS, prayersConflict, SPELLBOOKS } from './loadout-combat.js';
+import { itemId, itemName, itemSlot, itemStats, fetchItemData, useUiData, ItemIcon, UiIcon } from './loadout-items.jsx';
 import './LoadoutCreatorPage.css';
 
 // Equipment slot order; also the order used in share links.
@@ -26,13 +27,6 @@ const isRunePouch = (name) => /^(divine )?rune pouch$/i.test(name);
 const pouchCapacityOf = (name) => (/^divine/i.test(name) ? 4 : 3);
 const isRune = (name) => / rune$/.test(name);
 
-const dataUrl = (file) => `${import.meta.env.BASE_URL}loadout/${file}`;
-
-// item = [id, name, slotCode, stats?]
-const itemId = (it) => it[0];
-const itemName = (it) => it[1];
-const itemSlot = (it) => it[2];
-const itemStats = (it) => it[3] ?? null;
 const equipSlotFor = (it) => (itemSlot(it) === TWO_HANDED ? WEAPON : itemSlot(it));
 
 function encodeLoadout(equip, inv, pouch, setup, items) {
@@ -88,37 +82,6 @@ function StatRow({ name, v, pct = false }) {
 
 // Sheet index of each book's first spell in ui-icons.png (prayers come first).
 const SPELL_OFFSET = SPELLBOOKS.map((_, b) => SPELLBOOKS.slice(0, b).reduce((n, x) => n + x.spells.length, 0));
-
-/** Prayer/spell icon from the ui-icons.png sheet (same layout trick as ItemIcon). */
-function UiIcon({ ui, index }) {
-  const { tile, cols } = ui;
-  return (
-    <span
-      className="loadout-icon"
-      style={{
-        width: tile.w,
-        height: tile.h,
-        backgroundImage: `url(${dataUrl('ui-icons.png')})`,
-        backgroundPosition: `${-(index % cols) * tile.w}px ${-Math.floor(index / cols) * tile.h}px`,
-      }}
-    />
-  );
-}
-
-function ItemIcon({ data, index }) {
-  const { tile, cols } = data;
-  return (
-    <span
-      className="loadout-icon"
-      style={{
-        width: tile.w,
-        height: tile.h,
-        backgroundImage: `url(${dataUrl('icons.png')})`,
-        backgroundPosition: `${-(index % cols) * tile.w}px ${-Math.floor(index / cols) * tile.h}px`,
-      }}
-    />
-  );
-}
 
 function Slot({ data, itemIndex, label, className = '', targeted = false, onClick, onClear, onDragStart, onDrop, title, filledTitle, children }) {
   const item = itemIndex == null ? null : data.items[itemIndex];
@@ -248,7 +211,7 @@ function RunePicker({ data, runes, chosen, capacity, onToggle, onClose }) {
 export default function LoadoutCreatorPage() {
   const toast = useToast();
   const [data, setData] = useState(null);
-  const [ui, setUi] = useState(null); // prayer/spell icon sheet metadata; icons are optional
+  const ui = useUiData(); // prayer/spell icon sheet metadata; icons are optional
   const [loadError, setLoadError] = useState(false);
   const [equip, setEquip] = useState(() => Array(GEAR_LEN).fill(null));
   const [inv, setInv] = useState(() => Array(INV_SIZE).fill(null));
@@ -264,14 +227,9 @@ export default function LoadoutCreatorPage() {
   const loaded = useRef(false);
 
   useEffect(() => {
-    fetch(dataUrl('items.json'))
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    fetchItemData()
       .then(setData)
       .catch(() => setLoadError(true));
-    fetch(dataUrl('ui.json'))
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setUi)
-      .catch(() => {}); // the pickers fall back to text
   }, []);
 
   const idToIndex = useMemo(() => {
