@@ -100,6 +100,13 @@ function LootItem({ data, nameIndex, name, qty, unique, style }) {
 
 /** Invocation toggles with presets; the raid level is the sum of what's on. */
 function InvocationPicker({ input, value, onChange, ui }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
   const level = useMemo(() => {
     const rl = new Map(input.groups.flatMap((g) => g.options));
     return value.reduce((n, name) => n + (rl.get(name) ?? 0), 0);
@@ -136,30 +143,49 @@ function InvocationPicker({ input, value, onChange, ui }) {
         {presetIx === -1 && <option value={-1}>Custom ({level})</option>}
         {input.presets.map((p, i) => <option key={p.label} value={i}>{p.label}</option>)}
       </select>
-      <details className="rl-invo-details">
-        <summary>Pick invocations</summary>
-        {input.groups.map((g) => (
-          <div key={g.label} className="rl-invo-group">
-            <h5>{g.label}{g.exclusive ? ' — pick one' : ''}</h5>
-            <div className="rl-invo-chips">
-              {g.options.map(([name, rl]) => (
-                <button
-                  key={name}
-                  type="button"
-                  className={value.includes(name) ? 'picked' : ''}
-                  title={`${name} (+${rl} raid level)${input.info?.[name] ? ` — ${input.info[name]}` : ''}`}
-                  onClick={() => toggle(name, g)}
-                >
-                  {iconIndex && (
-                    <span className="rl-invo-icon"><UiIcon ui={ui} index={iconIndex.get(name)} /></span>
-                  )}
-                  {name} <i>+{rl}</i>
-                </button>
+      <button type="button" className="rl-invo-open" onClick={() => setOpen(true)}>
+        Pick invocations — {value.length} on
+      </button>
+      {open && (
+        <div className="rl-invo-overlay" onClick={() => setOpen(false)}>
+          <div
+            className="rl-invo-modal"
+            role="dialog"
+            aria-label="Pick invocations"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rl-invo-modal-head">
+              <b>Invocations</b>
+              <span>Raid level {level}</span>
+              <button type="button" onClick={() => setOpen(false)}>Done</button>
+            </div>
+            <div className="rl-invo-modal-body">
+              {input.groups.map((g) => (
+                <div key={g.label} className="rl-invo-group">
+                  <h5>{g.label}{g.exclusive ? ' — pick one' : ''}</h5>
+                  <div className="rl-invo-chips">
+                    {g.options.map(([name, rl]) => (
+                      <button
+                        key={name}
+                        type="button"
+                        className={value.includes(name) ? 'picked' : ''}
+                        title={`${name} (+${rl} raid level)${input.info?.[name] ? ` — ${input.info[name]}` : ''}`}
+                        onClick={() => toggle(name, g)}
+                      >
+                        {iconIndex && (
+                          <span className="rl-invo-icon"><UiIcon ui={ui} index={iconIndex.get(name)} /></span>
+                        )}
+                        <span className="rl-invo-name">{name}</span>
+                        <i>+{rl}</i>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        ))}
-      </details>
+        </div>
+      )}
       {input.hint && <small className="rl-invo-hint">{input.hint}</small>}
     </div>
   );
