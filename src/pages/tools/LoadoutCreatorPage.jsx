@@ -86,6 +86,25 @@ function StatRow({ name, v, pct = false }) {
   );
 }
 
+// Sheet index of each book's first spell in ui-icons.png (prayers come first).
+const SPELL_OFFSET = SPELLBOOKS.map((_, b) => SPELLBOOKS.slice(0, b).reduce((n, x) => n + x.spells.length, 0));
+
+/** Prayer/spell icon from the ui-icons.png sheet (same layout trick as ItemIcon). */
+function UiIcon({ ui, index }) {
+  const { tile, cols } = ui;
+  return (
+    <span
+      className="loadout-icon"
+      style={{
+        width: tile.w,
+        height: tile.h,
+        backgroundImage: `url(${dataUrl('ui-icons.png')})`,
+        backgroundPosition: `${-(index % cols) * tile.w}px ${-Math.floor(index / cols) * tile.h}px`,
+      }}
+    />
+  );
+}
+
 function ItemIcon({ data, index }) {
   const { tile, cols } = data;
   return (
@@ -103,14 +122,26 @@ function ItemIcon({ data, index }) {
 
 function Slot({ data, itemIndex, label, className = '', targeted = false, onClick, onClear, onDragStart, onDrop, title, filledTitle, children }) {
   const item = itemIndex == null ? null : data.items[itemIndex];
+  // Long-press removes on touch screens, where there is no right-click.
+  const press = useRef({ timer: null, fired: false });
+  const pressStart = () => {
+    if (!item) return;
+    press.current.fired = false;
+    press.current.timer = setTimeout(() => { press.current.fired = true; onClear(); }, 550);
+  };
+  const pressCancel = () => clearTimeout(press.current.timer);
   return (
     <div className={`loadout-slot-wrap ${className}`}>
       <button
         type="button"
         className={`loadout-slot ${item ? 'filled' : ''} ${targeted ? 'targeted' : ''}`}
-        title={item ? (filledTitle || `${itemName(item)} — click to move, right-click to remove`) : title}
-        onClick={onClick}
-        onContextMenu={(e) => { e.preventDefault(); if (item) onClear(); }}
+        title={item ? (filledTitle || `${itemName(item)} — click to move, right-click or long-press to remove`) : title}
+        onClick={(e) => { if (press.current.fired) { press.current.fired = false; return; } onClick(e); }}
+        onContextMenu={(e) => { e.preventDefault(); if (item && !press.current.fired) onClear(); }}
+        onTouchStart={pressStart}
+        onTouchEnd={pressCancel}
+        onTouchMove={pressCancel}
+        onTouchCancel={pressCancel}
         draggable={!!item && !!onDragStart}
         onDragStart={onDragStart}
         onDragOver={onDrop ? (e) => e.preventDefault() : undefined}
@@ -217,6 +248,7 @@ function RunePicker({ data, runes, chosen, capacity, onToggle, onClose }) {
 export default function LoadoutCreatorPage() {
   const toast = useToast();
   const [data, setData] = useState(null);
+  const [ui, setUi] = useState(null); // prayer/spell icon sheet metadata; icons are optional
   const [loadError, setLoadError] = useState(false);
   const [equip, setEquip] = useState(() => Array(GEAR_LEN).fill(null));
   const [inv, setInv] = useState(() => Array(INV_SIZE).fill(null));
@@ -236,6 +268,10 @@ export default function LoadoutCreatorPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then(setData)
       .catch(() => setLoadError(true));
+    fetch(dataUrl('ui.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setUi)
+      .catch(() => {}); // the pickers fall back to text
   }, []);
 
   const idToIndex = useMemo(() => {
@@ -342,8 +378,10 @@ export default function LoadoutCreatorPage() {
   /** Equip an item; anything displaced goes to `homeSlot` in the inventory (or the first free spot). */
   const equipItem = useCallback((itemIndex, homeSlot = null) => {
     const item = data.items[itemIndex];
-    const slot = equipSlotFor(item);
+    let slot = equipSlotFor(item);
     const twoHanded = itemSlot(item) === TWO_HANDED;
+    // Ammo with the main slot taken flows into an empty quiver slot instead of displacing.
+    if (slot === AMMO && equip[AMMO] != null && hasQuiver && equip[EXTRA_AMMO] == null) slot = EXTRA_AMMO;
 
     const displaced = [];
     const nextEquip = [...equip];
@@ -366,7 +404,7 @@ export default function LoadoutCreatorPage() {
     setEquip(nextEquip);
     setInv(nextInv);
     if (dropped) toast.error('Inventory full — displaced gear was removed');
-  }, [data, equip, inv, toast]);
+  }, [data, equip, inv, hasQuiver, toast]);
 
   /** Click an empty slot to open its search popover; click it again to close. */
   const toggleTarget = (t) => {
@@ -574,7 +612,7 @@ export default function LoadoutCreatorPage() {
                   targeted={(target?.kind === 'inv' || target?.kind === 'pouch') && target.at === at}
                   title="Empty inventory slot — click to search"
                   filledTitle={at === pouchAt
-                    ? `${itemName(data.items[itemIndex])} — click to choose runes, right-click to remove`
+                    ? `${itemName(data.items[itemIndex])} — click to choose runes, right-click or long-press to remove`
                     : undefined}
                   onClick={() => onInvClick(at)}
                   onClear={() => clearInvSlot(at)}
@@ -686,6 +724,7 @@ export default function LoadoutCreatorPage() {
                       title={`Level ${sp.level} Magic`}
                       onClick={() => setSpellIx(i === spellIx ? null : i)}
                     >
+                      {ui && <UiIcon ui={ui} index={ui.prayers + SPELL_OFFSET[book] + i} />}
                       <span className="n">{sp.name}</span>
                       <span className="lv">{sp.level}</span>
                     </button>
@@ -697,16 +736,17 @@ export default function LoadoutCreatorPage() {
 
           <section className="loadout-panel loadout-prayers" aria-label="Prayers">
             <h3>Prayers</h3>
-            <div className="loadout-prayer-grid">
+            <div className={`loadout-prayer-grid ${ui ? 'icons' : ''}`}>
               {PRAYERS.map((p, i) => (
                 <button
                   key={p.name}
                   type="button"
                   className={prayers.includes(i) ? 'picked' : ''}
-                  title={`Level ${p.level} — ${p.effect}`}
+                  title={`${p.name} (level ${p.level}) — ${p.effect}`}
+                  aria-label={p.name}
                   onClick={() => togglePrayer(i)}
                 >
-                  {p.name}
+                  {ui ? <UiIcon ui={ui} index={i} /> : p.name}
                 </button>
               ))}
             </div>

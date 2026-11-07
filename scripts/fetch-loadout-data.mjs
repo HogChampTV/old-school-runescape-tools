@@ -27,11 +27,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import { readItemDefinitions, fetchOpenRS2ItemDefinitions, findLocalCacheDir, WEAR_POS_TO_SLOT } from './lib/osrs-cache.mjs';
+import { PRAYERS, SPELLBOOKS } from '../src/pages/tools/loadout-combat.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE_DIR = path.join(ROOT, 'scripts', '.icon-cache');
+const UI_CACHE_DIR = path.join(ROOT, 'scripts', '.icon-cache', 'ui');
 const OUT_DATA = path.join(ROOT, 'public', 'loadout', 'items.json');
 const OUT_SHEET = path.join(ROOT, 'public', 'loadout', 'icons.png');
+const OUT_UI_DATA = path.join(ROOT, 'public', 'loadout', 'ui.json');
+const OUT_UI_SHEET = path.join(ROOT, 'public', 'loadout', 'ui-icons.png');
 const OVERRIDES_FILE = path.join(ROOT, 'scripts', 'loadout-overrides.json');
 
 const UA = 'old-school-runescape-tools data fetcher (github.com/HogChampTV/old-school-runescape-tools)';
@@ -69,6 +73,75 @@ function statsOf(def, slot) {
 function slotNameOf(def) {
   if (def.wearPos1 === 3 && def.wearPos2 === 5) return '2h';
   return WEAR_POS_TO_SLOT[def.wearPos1];
+}
+
+/**
+ * Prayer and spell icons for the combat setup panels, fetched once from the
+ * Old School RuneScape Wiki (file names match the names in loadout-combat.js)
+ * and cached in scripts/.icon-cache/ui so re-runs download nothing.
+ * Output order: all prayers, then every spellbook's spells flattened in
+ * SPELLBOOKS order — the page derives sheet indexes from the same module.
+ * ui.json carries no date on purpose: byte-identical output on every run
+ * keeps the weekly CI job from committing when nothing changed.
+ */
+async function buildUiIcons() {
+  const entries = [
+    ...PRAYERS.map((p) => ({ name: p.name, file: p.icon ?? p.name })),
+    ...SPELLBOOKS.flatMap((b) => b.spells.map((s) => ({ name: s.name, file: s.icon ?? s.name }))),
+  ];
+  fs.mkdirSync(UI_CACHE_DIR, { recursive: true });
+  let fetched = 0;
+  for (const e of entries) {
+    const wikiName = `${e.file.replaceAll(' ', '_')}.png`;
+    e.path = path.join(UI_CACHE_DIR, wikiName);
+    if (fs.existsSync(e.path)) continue;
+    const urls = [
+      `https://oldschool.runescape.wiki/images/${encodeURIComponent(wikiName)}`,
+      `https://oldschool.runescape.wiki/w/Special:FilePath/${encodeURIComponent(wikiName)}`,
+    ];
+    let buf = null;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: { 'User-Agent': UA } });
+        if (res.ok) { buf = Buffer.from(await res.arrayBuffer()); break; }
+      } catch { /* try the next url */ }
+    }
+    if (!buf) {
+      console.warn(`  ui icon failed: ${e.name} (${wikiName})`);
+      e.missing = true;
+      continue;
+    }
+    fs.writeFileSync(e.path, buf);
+    fetched++;
+    await sleep(80);
+  }
+  console.log(`UI icons: ${entries.length - fetched} cached, ${fetched} downloaded.`);
+
+  const pngs = entries.map((e) => (e.missing ? null : PNG.sync.read(fs.readFileSync(e.path))));
+  const MAX_TILE = 40; // icons are ~20-35px; clip anything unexpectedly large
+  const tw = Math.min(MAX_TILE, Math.max(...pngs.filter(Boolean).map((p) => p.width)));
+  const th = Math.min(MAX_TILE, Math.max(...pngs.filter(Boolean).map((p) => p.height)));
+  const COLS = 16;
+  const rows = Math.ceil(entries.length / COLS);
+  const sheet = new PNG({ width: COLS * tw, height: rows * th });
+  pngs.forEach((png, i) => {
+    if (!png) return;
+    const w = Math.min(png.width, tw);
+    const h = Math.min(png.height, th);
+    const sx = Math.floor((png.width - w) / 2);
+    const sy = Math.floor((png.height - h) / 2);
+    const dx = (i % COLS) * tw + Math.floor((tw - w) / 2);
+    const dy = Math.floor(i / COLS) * th + Math.floor((th - h) / 2);
+    for (let y = 0; y < h; y++) {
+      png.data.copy(sheet.data, ((dy + y) * sheet.width + dx) * 4, ((sy + y) * png.width + sx) * 4, ((sy + y) * png.width + sx + w) * 4);
+    }
+  });
+  fs.writeFileSync(OUT_UI_SHEET, PNG.sync.write(sheet));
+  fs.writeFileSync(
+    OUT_UI_DATA,
+    JSON.stringify({ v: 1, tile: { w: tw, h: th }, cols: COLS, prayers: PRAYERS.length, spells: entries.length - PRAYERS.length }),
+  );
+  console.log(`Wrote ${path.relative(ROOT, OUT_UI_SHEET)} (${sheet.width}x${sheet.height}, tile ${tw}x${th})`);
 }
 
 async function main() {
@@ -182,6 +255,8 @@ async function main() {
   );
   console.log(`Wrote ${path.relative(ROOT, OUT_DATA)} (${finalItems.length} items)`);
   console.log(`Wrote ${path.relative(ROOT, OUT_SHEET)} (${sheet.width}x${sheet.height})`);
+
+  await buildUiIcons();
 }
 
 main().catch((e) => {

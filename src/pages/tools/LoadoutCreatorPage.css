@@ -408,10 +408,13 @@
   overflow-y: auto;
 }
 
+.loadout-spell-list {
+  max-height: 280px;
+}
+
 .loadout-spell-list button {
   width: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
   background: none;
@@ -432,6 +435,10 @@
   border-color: #d4af37;
   color: #d4af37;
   background: rgba(212, 175, 55, 0.12);
+}
+
+.loadout-spell-list .n {
+  flex: 1;
 }
 
 .loadout-spell-list .lv {
@@ -469,6 +476,19 @@
   border-color: #d4af37;
   color: #d4af37;
   background: rgba(212, 175, 55, 0.14);
+}
+
+/* With icons loaded the prayer book becomes an in-game-style icon grid. */
+.loadout-prayer-grid.icons {
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+}
+
+.loadout-prayer-grid.icons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  min-height: 38px;
 }
 
 .loadout-note {
@@ -637,5 +657,37 @@
 @media (max-width: 720px) {
   .loadout-panels {
     justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .loadout-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .loadout-inv {
+    justify-content: center;
+  }
+
+  /* Popovers anchored to tiny tiles overflow a phone screen; pin them to the
+     bottom of the viewport as a sheet instead. */
+  .loadout-slot-search {
+    position: fixed;
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    width: min(340px, calc(100vw - 20px));
+    max-height: 60vh;
+    z-index: 50;
+  }
+
+  .loadout-rune-picker {
+    width: min(340px, calc(100vw - 20px));
+  }
+
+  .loadout-slot-search ul {
+    max-height: 42vh;
   }
 }

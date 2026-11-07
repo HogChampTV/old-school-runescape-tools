@@ -49,6 +49,12 @@
 
 .app-footer p { margin: 0; }
 
+@media (max-width: 600px) {
+  .page-content {
+    padding: 1rem;
+  }
+}
+
 .app-footer a {
   color: #d4af37;
   text-decoration: none;
