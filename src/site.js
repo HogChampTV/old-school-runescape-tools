@@ -9,6 +9,11 @@ export const TOOLS = [
     blurb: 'Plan an equipment and inventory setup, then share it as a link. No bank PIN required.',
   },
   {
+    path: '/raid-loot-simulator',
+    name: 'Raid Loot Simulator',
+    blurb: 'Open the reward chest of all four raids with real drop rates. Go dry for free.',
+  },
+  {
     path: '/tzhaar-name-generator',
     name: 'TzHaar Name Generator',
     blurb: 'Hatches volcanic creature names from TzHaar syllables. Has a slider you will regret.',

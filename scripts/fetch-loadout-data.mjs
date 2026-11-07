@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import { readItemDefinitions, fetchOpenRS2ItemDefinitions, findLocalCacheDir, WEAR_POS_TO_SLOT } from './lib/osrs-cache.mjs';
 import { PRAYERS, SPELLBOOKS } from '../src/pages/tools/loadout-combat.js';
+import { TOA_INVOCATIONS } from '../src/pages/tools/raid-loot-data.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE_DIR = path.join(ROOT, 'scripts', '.icon-cache');
@@ -88,6 +89,7 @@ async function buildUiIcons() {
   const entries = [
     ...PRAYERS.map((p) => ({ name: p.name, file: p.icon ?? p.name })),
     ...SPELLBOOKS.flatMap((b) => b.spells.map((s) => ({ name: s.name, file: s.icon ?? s.name }))),
+    ...TOA_INVOCATIONS.flatMap((g) => g.options.map(([name, , icon]) => ({ name, file: icon ?? g.icon }))),
   ];
   fs.mkdirSync(UI_CACHE_DIR, { recursive: true });
   let fetched = 0;
@@ -139,7 +141,14 @@ async function buildUiIcons() {
   fs.writeFileSync(OUT_UI_SHEET, PNG.sync.write(sheet));
   fs.writeFileSync(
     OUT_UI_DATA,
-    JSON.stringify({ v: 1, tile: { w: tw, h: th }, cols: COLS, prayers: PRAYERS.length, spells: entries.length - PRAYERS.length }),
+    JSON.stringify({
+      v: 1,
+      tile: { w: tw, h: th },
+      cols: COLS,
+      prayers: PRAYERS.length,
+      spells: SPELLBOOKS.reduce((n, b) => n + b.spells.length, 0),
+      invocations: TOA_INVOCATIONS.reduce((n, g) => n + g.options.length, 0),
+    }),
   );
   console.log(`Wrote ${path.relative(ROOT, OUT_UI_SHEET)} (${sheet.width}x${sheet.height}, tile ${tw}x${th})`);
 }

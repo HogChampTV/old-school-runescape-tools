@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import TzhaarNameGeneratorPage from './pages/tools/TzhaarNameGeneratorPage';
 import LoadoutCreatorPage from './pages/tools/LoadoutCreatorPage';
+import RaidLootSimulatorPage from './pages/tools/RaidLootSimulatorPage';
 import './App.css';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tzhaar-name-generator" element={<TzhaarNameGeneratorPage />} />
           <Route path="/loadout-creator" element={<LoadoutCreatorPage />} />
+          <Route path="/raid-loot-simulator" element={<RaidLootSimulatorPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
