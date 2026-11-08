@@ -622,6 +622,27 @@
   animation: rl-banner 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 
+/* 3rd age / Bloodhound: a tier above purple. */
+.rl-legendary-banner {
+  position: relative;
+  font-size: 2.1rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #fff6cf 0%, #ffd34d 45%, #c08a0a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgba(255, 211, 77, 0.8));
+  animation: rl-legendary 0.8s cubic-bezier(0.2, 1.7, 0.4, 1) both;
+}
+
+@keyframes rl-legendary {
+  0% { opacity: 0; transform: scale(0.3) rotate(-5deg); }
+  60% { transform: scale(1.18) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
 .rl-recipient {
   position: relative;
   color: #d9a8ff;

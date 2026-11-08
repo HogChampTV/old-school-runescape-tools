@@ -54,8 +54,9 @@ export function runRaid(config, values, rng = Math.random) {
 
   if (!unique || config.regularWithUnique) {
     // rolls may depend on whether a unique hit (team chests: the recipient
-    // forfeits their regular rolls in some raids).
-    const rolls = typeof config.regular.rolls === 'function' ? config.regular.rolls(values, !!unique) : config.regular.rolls;
+    // forfeits their regular rolls in some raids) or on the dice (clue
+    // caskets give a random number of rewards).
+    const rolls = typeof config.regular.rolls === 'function' ? config.regular.rolls(values, !!unique, rng) : config.regular.rolls;
     const seen = new Set();
     for (let i = 0; i < rolls; i++) {
       let pick = weightedPick(config.regular.table, rng);

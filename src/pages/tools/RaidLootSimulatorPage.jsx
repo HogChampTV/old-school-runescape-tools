@@ -4,8 +4,25 @@ import { runRaid, runMany, atLeastOnce } from './raid-loot-engine.js';
 import { useItemData, useNameIndex, useUiData, ItemIcon, UiIcon } from './loadout-items.jsx';
 import './RaidLootSimulatorPage.css';
 
-const STATS_KEY = 'raid-loot-stats';
 const UNTIL_CAP = 25000; // completions before "until purple" gives up
+
+// All the raid-flavoured wording in one place, so other content (clue
+// caskets) can rent the page with its own vocabulary.
+const RAID_STRINGS = {
+  noun: 'raid',
+  nouns: 'raids',
+  unique: 'purple',
+  uniques: 'purples',
+  Unique: 'Purple',
+  Uniques: 'Purples',
+  open: 'Open chest',
+  until: 'Until purple',
+  idle: 'The chest awaits.',
+  reset: 'Reset this raid',
+  dry: 'The desert is cruel.',
+  setup: 'Raid setup',
+  chance: 'Unique chance:',
+};
 
 // Each raid keeps three separate records, one per way of raiding.
 const PERSPECTIVES = [
@@ -16,15 +33,17 @@ const PERSPECTIVES = [
 
 const emptyStats = () => ({ kc: 0, dry: 0, pets: 0, uniqueCount: 0, uniques: [] });
 
-function loadStats() {
+function loadStats(storageKey, migrate) {
   try {
-    const raw = JSON.parse(localStorage.getItem(STATS_KEY));
+    const raw = JSON.parse(localStorage.getItem(storageKey));
     if (raw && typeof raw === 'object') {
-      // Older saves were keyed by raid id alone; they were team-share records.
-      for (const k of Object.keys(raw)) {
-        if (!k.includes(':')) {
-          raw[`${k}:share`] = raw[k];
-          delete raw[k];
+      // Older raid saves were keyed by raid id alone; they were team-share records.
+      if (migrate) {
+        for (const k of Object.keys(raw)) {
+          if (!k.includes(':')) {
+            raw[`${k}:share`] = raw[k];
+            delete raw[k];
+          }
         }
       }
       return raw;
@@ -78,9 +97,10 @@ function perspectiveConfig(raid, persp, n) {
   };
 }
 
-/** A raid's boss emblem: the boss pet's in-game icon (Olmlet for Olm, etc.). */
+/** A card's emblem: an in-game item icon (boss pet, reward casket, …). */
 function RaidEmblem({ raid, data, nameIndex, className = '' }) {
-  const ix = data ? nameIndex.get(raid.pet.name.toLowerCase()) : undefined;
+  const itemName = raid.emblemItem ?? raid.pet?.name;
+  const ix = data && itemName ? nameIndex.get(itemName.toLowerCase()) : undefined;
   if (ix == null) return <span className={className}>{raid.emblem}</span>;
   return <span className={`${className} rl-emblem-item`}><ItemIcon data={data} index={ix} /></span>;
 }
@@ -276,20 +296,24 @@ function RaidInput({ input, value, onChange, ui }) {
   );
 }
 
-export default function RaidLootSimulatorPage() {
+/**
+ * The simulator itself, content-agnostic: give it a list of configs
+ * (raids, clue tiers, …), a storage key, and the right vocabulary.
+ */
+export function LootSimulator({ title, intro, contents, storageKey, migrate = false, strings: s = RAID_STRINGS }) {
   const { data } = useItemData();
   const nameIndex = useNameIndex(data);
   const ui = useUiData(); // icon sheet for the invocation picker
-  const [raidId, setRaidId] = useState(RAIDS[0].id);
-  const raid = RAIDS.find((r) => r.id === raidId);
+  const [raidId, setRaidId] = useState(contents[0].id);
+  const raid = contents.find((r) => r.id === raidId);
 
   const defaultsFor = (r) => Object.fromEntries(r.inputs.map((i) => [i.key, i.default]));
   const [values, setValues] = useState(() => {
     const v = {};
-    for (const r of RAIDS) v[r.id] = defaultsFor(r);
+    for (const r of contents) v[r.id] = defaultsFor(r);
     return v;
   });
-  const [stats, setStats] = useState(loadStats);
+  const [stats, setStats] = useState(() => loadStats(storageKey, migrate));
   const [result, setResult] = useState(null); // { kind:'one', run } | { kind:'many', n, totals, uniques, pets } | { kind:'until', run, tries }
   const [bulkN, setBulkN] = useState(100); // how many raids the bulk button opens
   const [perspBy, setPerspBy] = useState({}); // raid id -> 'solo' | 'share' | 'team'
@@ -298,14 +322,16 @@ export default function RaidLootSimulatorPage() {
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
-    try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* fine */ }
-  }, [stats]);
+    try { localStorage.setItem(storageKey, JSON.stringify(stats)); } catch { /* fine */ }
+  }, [stats, storageKey]);
 
   const raidValues = values[raidId];
-  const persp = perspBy[raidId] ?? 'share';
-  const teamN = Math.max(1, raidValues[raid.teamKey] || 1);
+  // Content without a team-size input (clue caskets) is always one record.
+  const hasTeam = !!raid.teamKey;
+  const persp = hasTeam ? (perspBy[raidId] ?? 'share') : 'solo';
+  const teamN = hasTeam ? Math.max(1, raidValues[raid.teamKey] || 1) : 1;
   // 'solo' ignores the team-size input; 'team' multiplies the whole config up.
-  const effValues = persp === 'solo' ? { ...raidValues, [raid.teamKey]: 1 } : raidValues;
+  const effValues = persp === 'solo' && hasTeam ? { ...raidValues, [raid.teamKey]: 1 } : raidValues;
   const effRaid = useMemo(() => perspectiveConfig(raid, persp, teamN), [raid, persp, teamN]);
   const statsKey = `${raidId}:${persp}`;
   const raidStats = stats[statsKey] ?? emptyStats();
@@ -366,6 +392,24 @@ export default function RaidLootSimulatorPage() {
     reveal({ kind: 'until', run, tries });
   };
 
+  // Chase a specific prize (a master clue, any 3rd age, the pet, …).
+  const untilChase = (chase) => {
+    let tries = 0;
+    let run = null;
+    let pets = 0;
+    let found = false;
+    const uniques = [];
+    do {
+      run = runRaid(effRaid, effValues);
+      tries++;
+      if (run.pet) pets++;
+      if (run.unique) uniques.push({ name: run.unique, at: tries });
+      found = chase.test(run);
+    } while (!found && tries < UNTIL_CAP);
+    record(tries, uniques, pets);
+    reveal({ kind: 'chase', run, tries, found, chase });
+  };
+
   const resetStats = () => setStats((prev) => ({ ...prev, [statsKey]: emptyStats() }));
 
   const expected = raidStats.kc * chance;
@@ -378,6 +422,17 @@ export default function RaidLootSimulatorPage() {
       .sort((a, b) => (b.unique ? 1 : 0) - (a.unique ? 1 : 0));
   }, [result]);
 
+  // Did this reveal include something from the content's legendary class
+  // (3rd age, the Bloodhound)? Deserves more than a purple beam.
+  const legendaryHit = useMemo(() => {
+    if (!raid.legendary || !result) return false;
+    const { item, pet } = raid.legendary;
+    if (result.kind === 'many') {
+      return result.uniques.some((u) => item?.(u.name)) || (pet && result.pets > 0);
+    }
+    return (!!result.run.unique && !!item?.(result.run.unique)) || (pet && result.run.pet);
+  }, [raid, result]);
+
   return (
     <div className="page-content">
       <div
@@ -389,15 +444,12 @@ export default function RaidLootSimulatorPage() {
         }}
       >
         <header className="rl-head">
-          <h2>Raid Loot Simulator</h2>
-          <p>
-            Open the reward chest as many times as you like — same odds as the real thing, none of the
-            deaths. Rates and tables follow the wiki; your tally is saved in this browser.
-          </p>
+          <h2>{title}</h2>
+          <p>{intro}</p>
         </header>
 
         <div className="rl-tabs" role="tablist">
-          {RAIDS.map((r) => (
+          {contents.map((r) => (
             <button
               key={r.id}
               type="button"
@@ -414,7 +466,7 @@ export default function RaidLootSimulatorPage() {
         </div>
 
         <div className="rl-stage">
-          <section className="rl-panel rl-setup" aria-label="Raid setup">
+          <section className="rl-panel rl-setup" aria-label={s.setup}>
             <div className="rl-setup-head">
               <h3>{raid.name}</h3>
               <button
@@ -427,32 +479,36 @@ export default function RaidLootSimulatorPage() {
               </button>
             </div>
             <p className="rl-tagline">{raid.tagline}</p>
-            <div className="rl-persp" role="tablist" aria-label="Loot perspective">
-              {PERSPECTIVES.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={persp === p.id ? 'picked' : ''}
-                  title={p.desc}
-                  onClick={() => { setPerspBy((prev) => ({ ...prev, [raidId]: p.id })); setResult(null); }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
+            {hasTeam && (
+              <div className="rl-persp" role="tablist" aria-label="Loot perspective">
+                {PERSPECTIVES.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={persp === p.id ? 'picked' : ''}
+                    title={p.desc}
+                    onClick={() => { setPerspBy((prev) => ({ ...prev, [raidId]: p.id })); setResult(null); }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
             {raid.inputs
               .filter((input) => !(persp === 'solo' && input.key === raid.teamKey))
               .map((input) => (
                 <RaidInput key={input.key} input={input} value={raidValues[input.key]} onChange={(v, also) => setValue(input.key, v, also)} ui={ui} />
               ))}
             {raid.summary && <div className="rl-summary">{raid.summary(effValues)}</div>}
-            <div className="rl-chance">
-              Unique chance: <b>{(chance * 100).toFixed(2)}%</b>
-              <small>≈ 1 in {chance > 0 ? Math.round(1 / chance).toLocaleString() : '∞'}</small>
-            </div>
+            {s.chance && (
+              <div className="rl-chance">
+                {s.chance} <b>{(chance * 100).toFixed(2)}%</b>
+                <small>≈ 1 in {chance > 0 ? Math.round(1 / chance).toLocaleString() : '∞'}</small>
+              </div>
+            )}
             <div className="rl-actions">
               <button type="button" className="rl-open" onClick={openOne} disabled={opening}>
-                Open chest
+                {s.open}
               </button>
               <span className="rl-bulk">
                 <button type="button" className="rl-btn" onClick={() => openMany(bulkN)} disabled={opening}>
@@ -464,14 +520,19 @@ export default function RaidLootSimulatorPage() {
                   min={1}
                   max={100000}
                   value={bulkN}
-                  aria-label="How many raids to open at once"
+                  aria-label={`How many ${s.nouns} to open at once`}
                   onChange={(e) => {
                     const n = Math.floor(Number(e.target.value));
                     setBulkN(Number.isFinite(n) ? Math.min(Math.max(n, 1), 100000) : 100);
                   }}
                 />
               </span>
-              <button type="button" className="rl-btn" onClick={untilPurple} disabled={opening}>Until purple</button>
+              <button type="button" className="rl-btn" onClick={untilPurple} disabled={opening}>{s.until}</button>
+              {(raid.chases ?? []).map((c) => (
+                <button key={c.label} type="button" className="rl-btn" onClick={() => untilChase(c)} disabled={opening}>
+                  {c.label}
+                </button>
+              ))}
             </div>
           </section>
 
@@ -481,13 +542,16 @@ export default function RaidLootSimulatorPage() {
             </span>
             {opening && <div key={flashKey.current} className="rl-flash" />}
             {!opening && result?.kind !== 'many' && result?.run && (
-              <div className={`rl-result ${result.run.unique ? 'purple' : ''}`}>
+              <div className={`rl-result ${result.run.unique || (result.kind === 'chase' && result.found) ? 'purple' : ''}`}>
+                {legendaryHit && <div className="rl-legendary-banner">Legendary loot</div>}
                 {result.run.unique && (
                   <>
                     <div className="rl-beam" />
-                    <div className="rl-purple-banner">
-                      {result.kind === 'until' ? `Purple after ${result.tries.toLocaleString()} raids!` : 'Purple!'}
-                    </div>
+                    {result.kind !== 'chase' && (
+                      <div className="rl-purple-banner">
+                        {result.kind === 'until' ? `${s.Unique} after ${result.tries.toLocaleString()} ${s.nouns}!` : `${s.Unique}!`}
+                      </div>
+                    )}
                     {result.run.recipient && (
                       <div className="rl-recipient">
                         {result.run.recipient === 'You' ? "It's yours!" : `${result.run.recipient} received it`}
@@ -495,8 +559,22 @@ export default function RaidLootSimulatorPage() {
                     )}
                   </>
                 )}
+                {result.kind === 'chase' && (
+                  result.found ? (
+                    <>
+                      {!result.run.unique && <div className="rl-beam" />}
+                      <div className="rl-purple-banner">
+                        {result.chase.done} after {result.tries.toLocaleString()} {s.nouns}!
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rl-dry-banner">
+                      No {result.chase.done.toLowerCase()} in {UNTIL_CAP.toLocaleString()} {s.nouns}. {s.dry}
+                    </div>
+                  )
+                )}
                 {result.kind === 'until' && !result.run.unique && (
-                  <div className="rl-dry-banner">Nothing in {UNTIL_CAP.toLocaleString()} raids. The desert is cruel.</div>
+                  <div className="rl-dry-banner">Nothing in {UNTIL_CAP.toLocaleString()} {s.nouns}. {s.dry}</div>
                 )}
                 <div className="rl-loot">
                   {result.run.loot.map((l, i) => (
@@ -517,8 +595,9 @@ export default function RaidLootSimulatorPage() {
             {!opening && result?.kind === 'many' && (
               <div className={`rl-result ${result.uniques.length ? 'purple' : ''}`}>
                 {result.uniques.length > 0 && <div className="rl-beam" />}
+                {legendaryHit && <div className="rl-legendary-banner">Legendary loot</div>}
                 <div className="rl-many-head">
-                  {result.n.toLocaleString()} raids — {result.uniques.length} purple{result.uniques.length === 1 ? '' : 's'}
+                  {result.n.toLocaleString()} {s.nouns} — {result.uniques.length} {s.unique}{result.uniques.length === 1 ? '' : 's'}
                   {result.pets > 0 && <>, {result.pets} pet{result.pets === 1 ? '' : 's'}!</>}
                 </div>
                 {result.teamN > 1 && (
@@ -531,7 +610,7 @@ export default function RaidLootSimulatorPage() {
                         <div key={who} className={`rl-player ${who === 'You' ? 'me' : ''}`}>
                           <div className="rl-player-name">{who}</div>
                           <div className="rl-player-count">
-                            {got.length ? `${got.length} purple${got.length > 1 ? 's' : ''}` : 'dry'}
+                            {got.length ? `${got.length} ${s.unique}${got.length > 1 ? 's' : ''}` : 'dry'}
                           </div>
                           <div className="rl-player-items">
                             {[...counts.entries()].map(([name, c]) => {
@@ -558,7 +637,7 @@ export default function RaidLootSimulatorPage() {
                           {ix != null && data && <ItemIcon data={data} index={ix} />}
                           <span className="n">{u.name}</span>
                           {u.recipient && <span className="who">{u.recipient}</span>}
-                          <span className="kc">raid {u.at.toLocaleString()}</span>
+                          <span className="kc">{s.noun} {u.at.toLocaleString()}</span>
                         </li>
                       );
                     })}
@@ -581,16 +660,19 @@ export default function RaidLootSimulatorPage() {
             )}
             {!opening && !result && (
               <div className="rl-idle">
-                <p>The chest awaits.</p>
+                <p>{s.idle}</p>
               </div>
             )}
           </section>
 
           <section className="rl-panel rl-stats" aria-label="Your record">
-            <h3>{persp === 'team' ? 'Team record' : 'Your record'} — {PERSPECTIVES.find((p) => p.id === persp).label}</h3>
+            <h3>
+              {persp === 'team' ? 'Team record' : 'Your record'}
+              {hasTeam && <> — {PERSPECTIVES.find((p) => p.id === persp).label}</>}
+            </h3>
             <div className="rl-stat"><span>Completions</span><b>{raidStats.kc.toLocaleString()}</b></div>
-            <div className="rl-stat"><span>Purples</span><b>{raidStats.uniqueCount.toLocaleString()}</b></div>
-            <div className="rl-stat"><span>Expected purples</span><b>{expected.toFixed(1)}</b></div>
+            <div className="rl-stat"><span>{s.Uniques}</span><b>{raidStats.uniqueCount.toLocaleString()}</b></div>
+            <div className="rl-stat"><span>Expected {s.uniques}</span><b>{expected.toFixed(1)}</b></div>
             <div className="rl-stat"><span>Dry streak</span><b>{raidStats.dry.toLocaleString()}</b></div>
             {raidStats.dry > 0 && (
               <div className="rl-stat"><span>Luck of going this dry</span><b>{((1 - onRate) * 100).toFixed(1)}%</b></div>
@@ -598,7 +680,7 @@ export default function RaidLootSimulatorPage() {
             <div className="rl-stat"><span>Pets</span><b>{raidStats.pets.toLocaleString()}</b></div>
             {raidStats.uniques.length > 0 && (
               <>
-                <h4>Latest purples</h4>
+                <h4>Latest {s.uniques}</h4>
                 <ul className="rl-log">
                   {[...raidStats.uniques].reverse().map((u, i) => {
                     const ix = nameIndex.get(u.name.toLowerCase());
@@ -613,7 +695,7 @@ export default function RaidLootSimulatorPage() {
                 </ul>
               </>
             )}
-            <button type="button" className="rl-btn rl-reset" onClick={resetStats}>Reset this raid</button>
+            <button type="button" className="rl-btn rl-reset" onClick={resetStats}>{s.reset}</button>
           </section>
         </div>
 
@@ -625,5 +707,17 @@ export default function RaidLootSimulatorPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RaidLootSimulatorPage() {
+  return (
+    <LootSimulator
+      title="Raid Loot Simulator"
+      intro="Open the reward chest as many times as you like — same odds as the real thing, none of the deaths. Rates and tables follow the wiki; your tally is saved in this browser."
+      contents={RAIDS}
+      storageKey="raid-loot-stats"
+      migrate
+    />
   );
 }

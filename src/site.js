@@ -14,6 +14,11 @@ export const TOOLS = [
     blurb: 'Open the reward chest of all four raids with real drop rates. Go dry for free.',
   },
   {
+    path: '/clue-casket-simulator',
+    name: 'Clue Casket Simulator',
+    blurb: 'Open reward caskets from beginner to master at wiki rates. Third age not guaranteed.',
+  },
+  {
     path: '/tzhaar-name-generator',
     name: 'TzHaar Name Generator',
     blurb: 'Hatches volcanic creature names from TzHaar syllables. Has a slider you will regret.',
