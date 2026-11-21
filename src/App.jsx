@@ -9,6 +9,8 @@ import ClueCasketSimulatorPage from './pages/tools/ClueCasketSimulatorPage';
 import ToaSupplyPage from './pages/tools/ToaSupplyPage';
 import BossLootSimulatorPage from './pages/tools/BossLootSimulatorPage';
 import RaidHubPage from './pages/RaidHubPage';
+import SectionPage from './pages/SectionPage';
+import { NAV } from './site';
 import './App.css';
 
 export default function App() {
@@ -28,6 +30,8 @@ export default function App() {
           <Route path="/toa-supply-generator" element={<Navigate to="/helpful-spirit-supply-viewer" replace />} />
           <Route path="/boss-loot-simulator" element={<BossLootSimulatorPage />} />
           <Route path="/raids/:slug" element={<RaidHubPage />} />
+          {/* A landing page for each menu group (Loot Simulators, Utilities, Fun). */}
+          {NAV.map((g) => <Route key={g.path} path={g.path} element={<SectionPage group={g} />} />)}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

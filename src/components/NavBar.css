@@ -139,6 +139,25 @@
   background: rgba(212, 175, 55, 0.08);
 }
 
+/* The link to the group's landing page, above its tools. */
+.nav-menu-overview {
+  display: block;
+  padding: 0.4rem 0.7rem 0.5rem;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #2e2920;
+  color: #9c8a63;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.nav-menu-overview:hover,
+.nav-menu-overview.active {
+  color: #d4af37;
+}
+
 /* The featured tool leads its menu as a bigger, accented card. */
 .nav-menu-link.featured {
   padding: 0.7rem 0.8rem;

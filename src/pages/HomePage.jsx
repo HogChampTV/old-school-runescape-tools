@@ -18,13 +18,13 @@ export default function HomePage() {
     <div className="page-content home">
       <header className="home-head">
         <h1>Old School RuneScape Tools</h1>
-        <p>Small browser tools for Old School RuneScape. Free, no signup, nothing to install.</p>
+        <p>Loot simulators, raid tools and a loadout planner for Old School RuneScape.</p>
       </header>
 
       <div className="home-groups">
         {NAV.map((g) => (
           <section key={g.label} className="home-group">
-            <h3>{g.label}</h3>
+            <h3><Link to={g.path} className="home-group-link">{g.label} <span aria-hidden="true">→</span></Link></h3>
             <div className="home-cards">
               {g.items.map((t) => <ToolCard key={t.path} tool={t} />)}
             </div>

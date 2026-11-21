@@ -24,11 +24,11 @@ function MenuLink({ item }) {
 }
 
 /** A top-level nav entry that opens a menu of tools. */
-function NavGroup({ label, items }) {
+function NavGroup({ label, path, items }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { pathname } = useLocation();
-  const active = items.some((t) => pathname.startsWith(t.path));
+  const active = pathname.startsWith(path) || items.some((t) => pathname.startsWith(t.path));
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -57,6 +57,9 @@ function NavGroup({ label, items }) {
       </button>
       {open && (
         <div className="nav-menu" role="menu">
+          <NavLink to={path} end role="menuitem" className={({ isActive }) => `nav-menu-overview ${isActive ? 'active' : ''}`}>
+            All {label} →
+          </NavLink>
           {items.map((item) => <MenuLink key={item.path} item={item} />)}
         </div>
       )}
@@ -73,7 +76,7 @@ export default function NavBar() {
       </NavLink>
       <div className="navbar-links">
         <NavLink to="/" end className={link}>Home</NavLink>
-        {NAV.map((g) => <NavGroup key={g.label} label={g.label} items={g.items} />)}
+        {NAV.map((g) => <NavGroup key={g.label} label={g.label} path={g.path} items={g.items} />)}
       </div>
     </nav>
   );

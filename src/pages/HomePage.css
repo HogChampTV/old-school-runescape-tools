@@ -60,6 +60,25 @@
   letter-spacing: 0.08em;
 }
 
+.home-group-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-group-link span {
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.home-group-link:hover {
+  color: #d4af37;
+}
+
+.home-group-link:hover span,
+.home-group-link:focus-visible span {
+  opacity: 1;
+}
+
 .home-card {
   display: block;
   padding: 1.25rem;
