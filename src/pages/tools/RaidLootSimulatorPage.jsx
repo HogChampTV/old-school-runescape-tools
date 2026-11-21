@@ -538,7 +538,10 @@ export function LootSimulator({
                   }}
                 />
               </span>
-              <button type="button" className="rl-btn" onClick={untilPurple} disabled={opening}>{s.until}</button>
+              {/* Nothing to wait for when no unique can drop (Jad, Zuk, a destroyed Araxxor). */}
+              {chance > 0 && (
+                <button type="button" className="rl-btn" onClick={untilPurple} disabled={opening}>{s.until}</button>
+              )}
               {(raid.chases ?? []).map((c) => (
                 <button key={c.label} type="button" className="rl-btn" onClick={() => untilChase(c)} disabled={opening}>
                   {c.label}

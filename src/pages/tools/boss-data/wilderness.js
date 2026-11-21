@@ -507,6 +507,7 @@ export const WILDERNESS_BOSSES = [
   },
   {
     id: 'crazy-archaeologist',
+    emblemItem: "Fedora",
     name: 'Crazy archaeologist',
     short: 'Crazy Arch',
     category: 'wilderness',

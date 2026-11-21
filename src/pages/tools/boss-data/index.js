@@ -7,6 +7,8 @@
 import { bossConfig } from '../boss-loot-engine.js';
 import { SLAYER_BOSSES } from './slayer.js';
 import { WILDERNESS_BOSSES } from './wilderness.js';
+import { CLASSIC_BOSSES } from './classic.js';
+import { MODERN_BOSSES } from './modern.js';
 
 const theme = (accent, accent2, glow) => ({ accent, accent2, glow });
 
@@ -23,6 +25,6 @@ export const BOSS_CATEGORIES = [
 const byId = new Map(BOSS_CATEGORIES.map((c) => [c.id, c]));
 
 // Groups go live one at a time: add a data file's export here to ship it.
-const GROUPS = [SLAYER_BOSSES, WILDERNESS_BOSSES];
+const GROUPS = [SLAYER_BOSSES, WILDERNESS_BOSSES, CLASSIC_BOSSES, MODERN_BOSSES];
 
 export const BOSSES = GROUPS.flat().map((boss) => bossConfig(boss, byId.get(boss.category)));
