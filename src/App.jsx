@@ -7,6 +7,7 @@ import LoadoutCreatorPage from './pages/tools/LoadoutCreatorPage';
 import RaidLootSimulatorPage from './pages/tools/RaidLootSimulatorPage';
 import ClueCasketSimulatorPage from './pages/tools/ClueCasketSimulatorPage';
 import ToaSupplyPage from './pages/tools/ToaSupplyPage';
+import BossLootSimulatorPage from './pages/tools/BossLootSimulatorPage';
 import './App.css';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/raid-loot-simulator" element={<RaidLootSimulatorPage />} />
           <Route path="/clue-casket-simulator" element={<ClueCasketSimulatorPage />} />
           <Route path="/toa-supply-generator" element={<ToaSupplyPage />} />
+          <Route path="/boss-loot-simulator" element={<BossLootSimulatorPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

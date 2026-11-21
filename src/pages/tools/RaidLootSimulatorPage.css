@@ -518,6 +518,30 @@
   width: 70px;
 }
 
+/* "Until <item>": pick any unique, then roll until it drops. */
+.rl-chase-item {
+  display: flex;
+  gap: 4px;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.rl-chase-item select {
+  flex: 1;
+  min-width: 0;
+  background: #1f1a13;
+  border: 1px solid #4d4234;
+  border-radius: 4px;
+  color: #f0f0f0;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.rl-chase-item select:focus {
+  outline: none;
+  border-color: var(--raid-accent);
+}
+
 .rl-btn {
   background: #3e3529;
   border: 1px solid #5a4d3a;

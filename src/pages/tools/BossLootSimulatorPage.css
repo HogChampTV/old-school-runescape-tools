@@ -1,0 +1,177 @@
+/* Boss picker: category tabs, search, and a grid of boss tiles. */
+.bp {
+  background: #2b241b;
+  border: 1px solid #4d4234;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+/* The "current boss" bar only matters on phones, where the grid folds away. */
+.bp-current {
+  display: none;
+}
+
+.bp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.bp-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bp-cat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  background: #3e3529;
+  border: 1px solid #241f17;
+  border-radius: 5px;
+  color: #aaa;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bp-cat small {
+  color: #776a52;
+  font-weight: 500;
+}
+
+.bp-cat:hover {
+  color: #ddd;
+}
+
+.bp-cat.active {
+  color: var(--c);
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, #3e3529);
+}
+
+.bp-search {
+  flex: 0 1 220px;
+  min-width: 0;
+  background: #1f1a13;
+  border: 1px solid #4d4234;
+  border-radius: 4px;
+  color: #f0f0f0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.bp-search:focus {
+  outline: none;
+  border-color: #d4af37;
+}
+
+.bp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+  gap: 6px;
+}
+
+.bp-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #241e16;
+  border: 1px solid #3a3226;
+  border-radius: 5px;
+  color: #bbb;
+  padding: 4px 8px 4px 4px;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.bp-tile:hover {
+  border-color: var(--c);
+  color: #eee;
+}
+
+.bp-tile.active {
+  border-color: var(--c);
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, #241e16);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 25%, transparent);
+}
+
+.bp-tile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bp-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  flex: none;
+  overflow: hidden;
+}
+
+.bp-icon-none {
+  color: #776a52;
+  font-size: 1.1rem;
+}
+
+.bp-empty {
+  grid-column: 1 / -1;
+  margin: 0.4rem 0;
+  color: #776a52;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .bp-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #eee;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+  }
+
+  .bp-current-name {
+    flex: 1;
+    font-weight: 700;
+    color: #d4af37;
+  }
+
+  .bp-current-change {
+    color: #9c8a63;
+    font-size: 0.8rem;
+  }
+
+  .bp:not(.collapsed) .bp-current {
+    margin-bottom: 0.7rem;
+  }
+
+  .bp.collapsed .bp-body {
+    display: none;
+  }
+
+  .bp-search {
+    flex: 1 1 100%;
+  }
+
+  .bp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}

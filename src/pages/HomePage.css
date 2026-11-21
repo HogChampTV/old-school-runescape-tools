@@ -21,6 +21,23 @@
   gap: 1rem;
 }
 
+/* A group of related tools spans the row, with its own heading. */
+.home-group {
+  grid-column: 1 / -1;
+  padding: 0.9rem;
+  border: 1px solid #2e2920;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.03);
+}
+
+.home-group h3 {
+  margin: 0 0 0.7rem;
+  color: #9c8a63;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .home-card {
   display: block;
   padding: 1.25rem;

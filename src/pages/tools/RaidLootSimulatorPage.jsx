@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { RAIDS } from './raid-loot-data.js';
-import { runRaid, runMany, atLeastOnce } from './raid-loot-engine.js';
+import { runRaid, runMany, atLeastOnce, uniquesOf } from './raid-loot-engine.js';
 import { useItemData, useNameIndex, useUiData, ItemIcon, UiIcon } from './loadout-items.jsx';
 import './RaidLootSimulatorPage.css';
 
@@ -300,12 +300,17 @@ function RaidInput({ input, value, onChange, ui }) {
  * The simulator itself, content-agnostic: give it a list of configs
  * (raids, clue tiers, …), a storage key, and the right vocabulary.
  */
-export function LootSimulator({ title, intro, contents, storageKey, migrate = false, strings: s = RAID_STRINGS }) {
+export function LootSimulator({
+  title, intro, contents, storageKey, migrate = false, strings: s = RAID_STRINGS,
+  picker: Picker, initialId,
+}) {
   const { data } = useItemData();
   const nameIndex = useNameIndex(data);
   const ui = useUiData(); // icon sheet for the invocation picker
-  const [raidId, setRaidId] = useState(contents[0].id);
+  const [raidId, setRaidId] = useState(() => (contents.some((c) => c.id === initialId) ? initialId : contents[0].id));
   const raid = contents.find((r) => r.id === raidId);
+  const [chaseItem, setChaseItem] = useState(''); // the "Until <item>" pick
+  const select = (id) => { setRaidId(id); setResult(null); setOpening(false); setChaseItem(''); };
 
   const defaultsFor = (r) => Object.fromEntries(r.inputs.map((i) => [i.key, i.default]));
   const [values, setValues] = useState(() => {
@@ -346,7 +351,9 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
       const startKc = s.kc;
       s.kc += completions;
       s.pets += pets;
-      s.uniqueCount += uniques.length;
+      // Counts completions with a unique, to match "expected": a boss kill
+      // can hold several (the Sire's Unsired and its Font reward).
+      s.uniqueCount += new Set(uniques.map((u) => u.at)).size;
       for (const u of uniques) s.uniques = [...s.uniques, { name: u.name, kc: startKc + u.at }].slice(-40);
       // The dry streak picks up after the batch's last purple.
       s.dry = uniques.length
@@ -369,7 +376,7 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
 
   const openOne = () => {
     const run = runRaid(effRaid, effValues);
-    record(1, run.unique ? [{ name: run.unique, at: 1 }] : [], run.pet ? 1 : 0);
+    record(1, uniquesOf(run).map((name) => ({ name, at: 1 })), run.pet ? 1 : 0);
     reveal({ kind: 'one', run });
   };
 
@@ -388,7 +395,7 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
       tries++;
       if (run.pet) pets++;
     } while (!run.unique && tries < UNTIL_CAP);
-    record(tries, run.unique ? [{ name: run.unique, at: tries }] : [], pets);
+    record(tries, uniquesOf(run).map((name) => ({ name, at: tries })), pets);
     reveal({ kind: 'until', run, tries });
   };
 
@@ -403,7 +410,7 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
       run = runRaid(effRaid, effValues);
       tries++;
       if (run.pet) pets++;
-      if (run.unique) uniques.push({ name: run.unique, at: tries });
+      for (const name of uniquesOf(run)) uniques.push({ name, at: tries });
       found = chase.test(run);
     } while (!found && tries < UNTIL_CAP);
     record(tries, uniques, pets);
@@ -430,7 +437,7 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
     if (result.kind === 'many') {
       return result.uniques.some((u) => item?.(u.name)) || (pet && result.pets > 0);
     }
-    return (!!result.run.unique && !!item?.(result.run.unique)) || (pet && result.run.pet);
+    return uniquesOf(result.run).some((name) => item?.(name)) || (pet && result.run.pet);
   }, [raid, result]);
 
   return (
@@ -448,22 +455,26 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
           <p>{intro}</p>
         </header>
 
-        <div className="rl-tabs" role="tablist">
-          {contents.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              role="tab"
-              aria-selected={r.id === raidId}
-              className={`rl-tab ${r.id === raidId ? 'active' : ''}`}
-              style={{ '--raid-accent': r.theme.accent, '--raid-glow': r.theme.glow }}
-              onClick={() => { setRaidId(r.id); setResult(null); setOpening(false); }}
-            >
-              <RaidEmblem raid={r} data={data} nameIndex={nameIndex} className="rl-tab-emblem" />
-              <span className="rl-tab-name">{r.short}</span>
-            </button>
-          ))}
-        </div>
+        {Picker ? (
+          <Picker contents={contents} activeId={raidId} onSelect={select} data={data} nameIndex={nameIndex} />
+        ) : (
+          <div className="rl-tabs" role="tablist">
+            {contents.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                role="tab"
+                aria-selected={r.id === raidId}
+                className={`rl-tab ${r.id === raidId ? 'active' : ''}`}
+                style={{ '--raid-accent': r.theme.accent, '--raid-glow': r.theme.glow }}
+                onClick={() => select(r.id)}
+              >
+                <RaidEmblem raid={r} data={data} nameIndex={nameIndex} className="rl-tab-emblem" />
+                <span className="rl-tab-name">{r.short}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="rl-stage">
           <section className="rl-panel rl-setup" aria-label={s.setup}>
@@ -533,6 +544,30 @@ export function LootSimulator({ title, intro, contents, storageKey, migrate = fa
                   {c.label}
                 </button>
               ))}
+              {raid.chaseItems?.length > 1 && (
+                <span className="rl-chase-item">
+                  <select
+                    value={chaseItem}
+                    onChange={(e) => setChaseItem(e.target.value)}
+                    aria-label="Item to roll until"
+                  >
+                    <option value="">Until a specific item…</option>
+                    {raid.chaseItems.map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    className="rl-btn"
+                    disabled={opening || !chaseItem}
+                    onClick={() => untilChase({
+                      label: chaseItem,
+                      done: chaseItem,
+                      test: (run) => uniquesOf(run).includes(chaseItem),
+                    })}
+                  >
+                    Go
+                  </button>
+                </span>
+              )}
             </div>
           </section>
 

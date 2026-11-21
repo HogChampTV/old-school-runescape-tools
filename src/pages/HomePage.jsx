@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom';
-import { TOOLS } from '../site';
+import { navEntries } from '../site';
 import './HomePage.css';
+
+const ToolCard = ({ tool }) => (
+  <Link to={tool.path} className="home-card">
+    <h2>{tool.name}</h2>
+    <p>{tool.blurb}</p>
+  </Link>
+);
 
 export default function HomePage() {
   return (
@@ -11,12 +18,14 @@ export default function HomePage() {
       </header>
 
       <div className="home-cards">
-        {TOOLS.map(tool => (
-          <Link key={tool.path} to={tool.path} className="home-card">
-            <h2>{tool.name}</h2>
-            <p>{tool.blurb}</p>
-          </Link>
-        ))}
+        {navEntries().map((e) => (e.group ? (
+          <section key={e.group} className="home-group">
+            <h3>{e.group}</h3>
+            <div className="home-cards">
+              {e.tools.map((t) => <ToolCard key={t.path} tool={t} />)}
+            </div>
+          </section>
+        ) : <ToolCard key={e.tool.path} tool={e.tool} />))}
         <div className="home-card placeholder">
           <h2>More to come</h2>
           <p>

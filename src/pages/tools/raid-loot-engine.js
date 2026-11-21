@@ -39,6 +39,12 @@ const qtyOf = (qty, values, rng) => {
 
 /** Simulate one completion. Returns { unique, loot, pet }. */
 export function runRaid(config, values, rng = Math.random) {
+  // Content with its own loot model (bosses) rolls the whole kill itself and
+  // may land several uniques at once.
+  if (config.kill) {
+    const r = config.kill(values, rng);
+    return { unique: r.uniques[0] ?? null, uniques: r.uniques, loot: r.loot, pet: r.pet, recipient: null };
+  }
   const loot = [];
   let unique = null;
 
@@ -90,7 +96,7 @@ export function runMany(config, values, n, rng = Math.random) {
   for (let i = 0; i < n; i++) {
     last = runRaid(config, values, rng);
     // at = which completion of the batch (1-based) the purple landed on.
-    if (last.unique) uniques.push({ name: last.unique, at: i + 1, recipient: last.recipient });
+    for (const name of uniquesOf(last)) uniques.push({ name, at: i + 1, recipient: last.recipient });
     if (last.recipient) recipients.set(last.recipient, [...(recipients.get(last.recipient) ?? []), last.unique]);
     if (last.pet) pets++;
     for (const l of last.loot) {
@@ -101,6 +107,9 @@ export function runMany(config, values, n, rng = Math.random) {
   }
   return { totals, uniques, recipients, pets, last };
 }
+
+/** Every unique one result holds (raids give at most one, bosses can give several). */
+export const uniquesOf = (run) => run.uniques ?? (run.unique ? [run.unique] : []);
 
 /** Chance of at least one success in n trials at probability p. */
 export const atLeastOnce = (p, n) => 1 - (1 - p) ** n;

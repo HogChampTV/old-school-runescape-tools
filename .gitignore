@@ -2,6 +2,7 @@ node_modules/
 dist/
 scripts/.icon-cache/
 scripts/.cache-dump/
+scripts/.wiki-cache/
 .claude/
 *.log
 .DS_Store

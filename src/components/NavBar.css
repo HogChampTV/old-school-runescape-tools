@@ -52,6 +52,93 @@
   border-bottom-color: #d4af37;
 }
 
+/* ----- grouped tools (dropdown) ----- */
+
+.nav-group {
+  position: relative;
+}
+
+.nav-group-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nav-group.open .nav-group-button {
+  color: #d4af37;
+}
+
+.nav-caret {
+  font-size: 0.7em;
+  transition: transform 0.2s ease;
+}
+
+.nav-group.open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 300px;
+  padding: 6px;
+  background: #1f1f1f;
+  border: 1px solid #4d4234;
+  border-top: 2px solid #d4af37;
+  border-radius: 6px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
+  animation: nav-menu-in 0.16s ease-out;
+}
+
+@keyframes nav-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.nav-menu-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 4px;
+  color: #ccc;
+  text-decoration: none;
+}
+
+.nav-menu-link b {
+  font-size: 0.92rem;
+}
+
+.nav-menu-link small {
+  color: #888;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.nav-menu-link:hover {
+  background: #2b2b2b;
+}
+
+.nav-menu-link:hover b,
+.nav-menu-link.active b {
+  color: #d4af37;
+}
+
+.nav-menu-link.active {
+  background: rgba(212, 175, 55, 0.08);
+}
+
 @media (max-width: 600px) {
   .navbar {
     padding: 0.6rem 1rem;
@@ -65,5 +152,21 @@
   .nav-link {
     padding: 0.35rem 0.6rem;
     font-size: 0.85rem;
+  }
+
+  /* On a phone the menu spans the screen under the nav bar. */
+  .nav-group {
+    position: static;
+  }
+
+  .navbar {
+    position: relative;
+  }
+
+  .nav-menu {
+    top: 100%;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
   }
 }
