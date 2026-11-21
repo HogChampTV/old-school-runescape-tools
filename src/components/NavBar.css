@@ -139,6 +139,57 @@
   background: rgba(212, 175, 55, 0.08);
 }
 
+/* The featured tool leads its menu as a bigger, accented card. */
+.nav-menu-link.featured {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.14), rgba(212, 175, 55, 0.03));
+}
+
+.nav-menu-link.featured b {
+  color: #d4af37;
+  font-size: 1rem;
+}
+
+.nav-menu-link.featured small {
+  color: #aaa;
+}
+
+/* Compact one-liners (the raids), after a divider. */
+.nav-menu-link.featured + .nav-menu-link.compact {
+  margin-top: 6px;
+  padding-top: 0.6rem;
+  border-top: 1px solid #2e2920;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.nav-menu-link.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.nav-menu-link.compact b {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
+}
+
+.nav-menu-link.compact:hover b,
+.nav-menu-link.compact.active b {
+  color: var(--c);
+}
+
 @media (max-width: 600px) {
   .navbar {
     padding: 0.6rem 1rem;

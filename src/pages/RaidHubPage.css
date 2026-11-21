@@ -1,0 +1,168 @@
+/* A raid's landing page, themed by the raid's own colours. */
+.rh {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.rh-head {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #4d4234;
+  border-top: 3px solid var(--c);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 10% 50%, var(--glow), transparent 60%),
+    #2b241b;
+}
+
+.rh-emblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 80px;
+  flex: none;
+  filter: drop-shadow(0 0 14px var(--glow));
+}
+
+.rh-emblem .loadout-icon {
+  transform: scale(2.2);
+}
+
+.rh-kicker {
+  margin: 0;
+  color: var(--c);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rh-head h2 {
+  margin: 0.1rem 0 0.35rem;
+  color: #f0e6d0;
+  font-size: 1.7rem;
+}
+
+.rh-tagline {
+  margin: 0;
+  color: #bbb;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.rh-section {
+  margin: 0 0 0.6rem;
+  color: #9c8a63;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.rh-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.75rem;
+}
+
+.rh-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #3a3226;
+  border-left: 3px solid var(--c);
+  border-radius: 8px;
+  background: #1e1a14;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.rh-tool b {
+  color: var(--c);
+  font-size: 1.08rem;
+}
+
+.rh-tool span {
+  color: #b8b8b8;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.rh-tool i {
+  margin-top: auto;
+  color: #9c8a63;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+a.rh-tool:hover {
+  border-color: var(--c);
+  transform: translateY(-2px);
+}
+
+a.rh-tool:hover i {
+  color: var(--c);
+}
+
+.rh-soon {
+  border-style: dashed;
+  border-left-style: dashed;
+  opacity: 0.6;
+}
+
+.rh-others {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rh-other {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+  border: 1px solid #3a3226;
+  border-radius: 6px;
+  background: #241e16;
+  color: #ccc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rh-other:hover {
+  border-color: var(--c);
+  color: var(--c);
+}
+
+.rh-other-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rh-tool { transition: none; }
+}
+
+@media (max-width: 600px) {
+  .rh-head {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.6rem;
+  }
+
+  .rh-head h2 {
+    font-size: 1.45rem;
+  }
+}

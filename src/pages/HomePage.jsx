@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom';
-import { navEntries } from '../site';
+import { NAV } from '../site';
 import './HomePage.css';
 
 const ToolCard = ({ tool }) => (
-  <Link to={tool.path} className="home-card">
+  <Link
+    to={tool.path}
+    className={`home-card ${tool.featured ? 'featured' : ''} ${tool.accent ? 'accented' : ''}`}
+    style={tool.accent ? { '--c': tool.accent } : undefined}
+  >
     <h2>{tool.name}</h2>
     <p>{tool.blurb}</p>
   </Link>
@@ -17,29 +21,27 @@ export default function HomePage() {
         <p>Small browser tools for Old School RuneScape. Free, no signup, nothing to install.</p>
       </header>
 
-      <div className="home-cards">
-        {navEntries().map((e) => (e.group ? (
-          <section key={e.group} className="home-group">
-            <h3>{e.group}</h3>
+      <div className="home-groups">
+        {NAV.map((g) => (
+          <section key={g.label} className="home-group">
+            <h3>{g.label}</h3>
             <div className="home-cards">
-              {e.tools.map((t) => <ToolCard key={t.path} tool={t} />)}
+              {g.items.map((t) => <ToolCard key={t.path} tool={t} />)}
             </div>
           </section>
-        ) : <ToolCard key={e.tool.path} tool={e.tool} />))}
-        <div className="home-card placeholder">
-          <h2>More to come</h2>
-          <p>
-            Calculators and other small tools are planned.{' '}
-            <a
-              href="https://github.com/HogChampTV/old-school-runescape-tools/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Suggestions welcome
-            </a>.
-          </p>
-        </div>
+        ))}
       </div>
+
+      <p className="home-more">
+        More to come —{' '}
+        <a
+          href="https://github.com/HogChampTV/old-school-runescape-tools/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          suggestions welcome
+        </a>.
+      </p>
     </div>
   );
 }

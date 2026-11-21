@@ -92,20 +92,21 @@ export function runMany(config, values, n, rng = Math.random) {
   const uniques = [];
   const recipients = new Map(); // label -> list of unique item names received
   let pets = 0;
+  const petsAt = []; // which completions (1-based) gave the pet
   let last = null;
   for (let i = 0; i < n; i++) {
     last = runRaid(config, values, rng);
     // at = which completion of the batch (1-based) the purple landed on.
     for (const name of uniquesOf(last)) uniques.push({ name, at: i + 1, recipient: last.recipient });
     if (last.recipient) recipients.set(last.recipient, [...(recipients.get(last.recipient) ?? []), last.unique]);
-    if (last.pet) pets++;
+    if (last.pet) { pets++; petsAt.push(i + 1); }
     for (const l of last.loot) {
       const t = totals.get(l.name) ?? { qty: 0, unique: !!l.unique };
       t.qty += l.qty;
       totals.set(l.name, t);
     }
   }
-  return { totals, uniques, recipients, pets, last };
+  return { totals, uniques, recipients, pets, petsAt, last };
 }
 
 /** Every unique one result holds (raids give at most one, bosses can give several). */

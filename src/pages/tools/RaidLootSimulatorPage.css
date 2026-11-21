@@ -864,6 +864,183 @@
   text-shadow: 1px 1px 0 #000;
 }
 
+/* ----- settings row: saving, confirmations, reset everything ----- */
+
+.rl-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #3a3226;
+  border-radius: 6px;
+  background: #241e16;
+}
+
+.rl-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #ccc;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.rl-setting input {
+  accent-color: var(--raid-accent);
+}
+
+.rl-reset-all {
+  margin-left: auto;
+}
+
+.rl-settings-note {
+  flex-basis: 100%;
+  color: #776a52;
+  font-size: 0.74rem;
+}
+
+.rl-btn.rl-danger {
+  border-color: #8a3a32;
+  color: #ff9a8a;
+}
+
+.rl-btn.rl-danger:hover:not(:disabled) {
+  background: #4a221d;
+  border-color: #c4523f;
+  color: #ffb3a6;
+}
+
+/* ----- confirmation dialog ----- */
+
+.rl-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(10, 8, 5, 0.72);
+}
+
+.rl-dialog {
+  width: min(420px, 100%);
+  padding: 1.1rem 1.2rem 1rem;
+  border: 1px solid #4d4234;
+  border-top: 3px solid #c4523f;
+  border-radius: 8px;
+  background: #2b241b;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+  animation: rl-banner 0.25s ease-out both;
+}
+
+.rl-dialog h3 {
+  margin: 0 0 0.5rem;
+  color: #f0e6d0;
+  font-size: 1.05rem;
+}
+
+.rl-dialog p {
+  margin: 0 0 0.9rem;
+  color: #bbb;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.rl-dialog-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  color: #aaa;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.rl-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .rl-reset-all {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+
+  .rl-dialog-actions .rl-btn {
+    flex: 1;
+    padding: 0.6rem;
+  }
+}
+
+/* Pets in the drop logs: gold, tagged, with the kill they came on. */
+.rl-log li.pet .n,
+.rl-many-log li.pet .n {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.rl-pet-tag {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid #a88a3a;
+  border-radius: 3px;
+  color: #ffd166;
+  font-size: 0.58rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: 1px;
+}
+
+.rl-pet-kc {
+  margin-left: 0.3rem;
+  color: #b99a4a;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Stack colours as in game: 100K+ white, 10M+ green. */
+.rl-qty.k {
+  color: #fff;
+}
+
+.rl-qty.m {
+  color: #00ff80;
+}
+
+/* ----- all loot since the last reset ----- */
+
+.rl-haul {
+  margin-top: 1.25rem;
+  border-top: 3px solid var(--raid-accent);
+}
+
+.rl-haul-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1rem;
+}
+
+.rl-haul-head small {
+  color: #776a52;
+  font-size: 0.75rem;
+}
+
+/* The full haul at full height: the page scrolls, not the grid. */
+.rl-loot.rl-haul-grid {
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  justify-content: flex-start;
+}
+
 .rl-item-name {
   color: #bbb;
   font-size: 0.6rem;

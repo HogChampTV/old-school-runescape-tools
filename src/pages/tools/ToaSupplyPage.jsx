@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { RAID_HUBS, raidHubPath } from '../../site';
 import { TOA_INVOCATIONS } from './raid-loot-data.js';
 import {
   SUPPLY_ITEMS, HELP_LEVELS, RESTORATION, BUNDLES, RARE_CHANCE,
@@ -95,7 +97,8 @@ export default function ToaSupplyPage() {
     <div className="page-content">
       <div className="ts">
         <header className="ts-head">
-          <h2>ToA Supply Generator</h2>
+          <Link to={raidHubPath(RAID_HUBS.find((h) => h.id === 'toa'))} className="ts-back">← Tombs of Amascut</Link>
+          <h2>Helpful Spirit Supply Viewer</h2>
           <p>
             What the Helpful Spirit hands you between paths, for every mix of the supply invocations. Pick yours
             below — the whole grid stays visible so you can compare, and clicking an item shows the odds of each amount.

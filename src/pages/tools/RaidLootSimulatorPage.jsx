@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RAIDS } from './raid-loot-data.js';
 import { runRaid, runMany, atLeastOnce, uniquesOf } from './raid-loot-engine.js';
 import { useItemData, useNameIndex, useUiData, ItemIcon, UiIcon } from './loadout-items.jsx';
+import { LOOT_SIM_KEYS, loadPrefs, savePrefs, forgetAllResults } from './loot-sim-prefs.js';
 import './RaidLootSimulatorPage.css';
 
 const UNTIL_CAP = 25000; // completions before "until purple" gives up
+const BULK_MAX = 100000; // most completions one bulk open runs
 
 // All the raid-flavoured wording in one place, so other content (clue
 // caskets) can rent the page with its own vocabulary.
@@ -31,7 +34,20 @@ const PERSPECTIVES = [
   { id: 'team', label: 'Whole team', desc: 'Everything the entire team pulls per raid.' },
 ];
 
-const emptyStats = () => ({ kc: 0, dry: 0, pets: 0, uniqueCount: 0, uniques: [] });
+// totals: every item received since the last reset, { name: { qty, unique } }.
+// totalsFrom: the kc the tally started at (records saved before it existed
+// start counting loot from where they are).
+const emptyStats = () => ({ kc: 0, dry: 0, pets: 0, uniqueCount: 0, uniques: [], totals: {}, totalsFrom: 0 });
+
+/** Add one result's loot ([{ name, qty, unique }]) into a running Map. */
+function tally(map, loot) {
+  for (const l of loot) {
+    const t = map.get(l.name) ?? { qty: 0, unique: !!l.unique };
+    t.qty += l.qty;
+    map.set(l.name, t);
+  }
+  return map;
+}
 
 function loadStats(storageKey, migrate) {
   try {
@@ -105,13 +121,21 @@ function RaidEmblem({ raid, data, nameIndex, className = '' }) {
   return <span className={`${className} rl-emblem-item`}><ItemIcon data={data} index={ix} /></span>;
 }
 
-function LootItem({ data, nameIndex, name, qty, unique, style }) {
+/** The game's stack label: exact under 100K, then "123K" (white), then "45M" (green). */
+function stackLabel(qty) {
+  if (qty < 100000) return { text: qty.toLocaleString(), tier: '' };
+  if (qty < 10000000) return { text: `${Math.floor(qty / 1000)}K`, tier: 'k' };
+  return { text: `${Math.floor(qty / 1000000)}M`, tier: 'm' };
+}
+
+function LootItem({ data, nameIndex, name, qty, unique, style, compact = false }) {
   const ix = nameIndex.get(name.toLowerCase());
+  const label = compact ? stackLabel(qty) : { text: qty.toLocaleString(), tier: '' };
   return (
-    <div className={`rl-item ${unique ? 'unique' : ''}`} style={style} title={name}>
+    <div className={`rl-item ${unique ? 'unique' : ''}`} style={style} title={qty > 1 ? `${name} ×${qty.toLocaleString()}` : name}>
       <span className="rl-item-icon">
         {ix != null && data ? <ItemIcon data={data} index={ix} /> : <span className="rl-item-missing">?</span>}
-        {qty > 1 && <span className="rl-qty">{qty.toLocaleString()}</span>}
+        {qty > 1 && <span className={`rl-qty ${label.tier}`}>{label.text}</span>}
       </span>
       <span className="rl-item-name">{name}</span>
     </div>
@@ -257,24 +281,7 @@ function RaidInput({ input, value, onChange, ui }) {
             value={Math.min(Math.max(value, input.min), input.max)}
             onChange={(e) => onChange(Number(e.target.value))}
           />
-          <input
-            type="number"
-            className="rl-range-num"
-            min={input.min}
-            max={input.max}
-            value={value}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              // Let partial numbers through while typing; cap only the top.
-              onChange(Number.isFinite(n) ? Math.min(n, input.max) : input.min);
-            }}
-            onBlur={(e) => {
-              // Leaving the box empty or out of range falls back to sane values.
-              if (e.target.value === '') { onChange(input.default); return; }
-              const n = Number(e.target.value);
-              onChange(Number.isFinite(n) ? Math.min(Math.max(n, input.min), input.max) : input.default);
-            }}
-          />
+          <NumberBox className="rl-range-num" value={value} min={input.min} max={input.max} onChange={onChange} />
         </div>
         {input.hint && <small>{input.hint}</small>}
       </label>
@@ -283,16 +290,82 @@ function RaidInput({ input, value, onChange, ui }) {
   return (
     <label className="rl-input">
       <span>{input.label}</span>
-      <input
-        type="number"
-        min={input.min}
-        max={input.max}
-        step={input.step ?? 1}
-        value={value}
-        onChange={(e) => onChange(Math.max(input.min ?? 0, Math.min(input.max ?? Infinity, Number(e.target.value) || 0)))}
-      />
+      <NumberBox value={value} min={input.min ?? 0} max={input.max ?? Infinity} onChange={onChange} />
       {input.hint && <small>{input.hint}</small>}
     </label>
+  );
+}
+
+/**
+ * A number box you can clear and retype. What you type is kept as text;
+ * onChange gets each valid value (capped at max) as you go, and leaving
+ * the box tidies it to the value in use.
+ */
+function NumberBox({ value, min, max, onChange, onEnter, className, ...rest }) {
+  const [text, setText] = useState(String(value));
+  // Follow outside changes (the slider, a preset) without fighting typing.
+  useEffect(() => {
+    setText((t) => (Number(t) === value && t !== '' ? t : String(value)));
+  }, [value]);
+  const settle = () => {
+    const n = Math.floor(Number(text));
+    // Below the minimum counts as the minimum; empty or nonsense keeps the old value.
+    if (text !== '' && Number.isFinite(n) && n < min) onChange(min);
+    setText(String(text !== '' && Number.isFinite(n) ? Math.min(Math.max(n, min), max) : value));
+  };
+  return (
+    <input
+      type="number"
+      className={className}
+      min={min}
+      max={Number.isFinite(max) ? max : undefined}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        const n = Math.floor(Number(e.target.value));
+        if (e.target.value !== '' && Number.isFinite(n) && n >= min) onChange(Math.min(n, max));
+      }}
+      onBlur={settle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { settle(); onEnter?.(); }
+      }}
+      {...rest}
+    />
+  );
+}
+
+/** "Are you sure?" before clearing results, with a way to stop being asked. */
+function ConfirmDialog({ title, body, label, onConfirm, onCancel }) {
+  const [dontAsk, setDontAsk] = useState(false);
+  const cancelRef = useRef(null);
+  useEffect(() => {
+    cancelRef.current?.focus();
+    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  return (
+    <div className="rl-dialog-overlay" onClick={onCancel}>
+      <div
+        className="rl-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="rl-dialog-title"
+        aria-describedby="rl-dialog-body"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="rl-dialog-title">{title}</h3>
+        <p id="rl-dialog-body">{body}</p>
+        <label className="rl-dialog-check">
+          <input type="checkbox" checked={dontAsk} onChange={(e) => setDontAsk(e.target.checked)} />
+          Don't ask me again
+        </label>
+        <div className="rl-dialog-actions">
+          <button type="button" className="rl-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
+          <button type="button" className="rl-btn rl-danger" onClick={() => onConfirm(dontAsk)}>{label}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -318,7 +391,10 @@ export function LootSimulator({
     for (const r of contents) v[r.id] = defaultsFor(r);
     return v;
   });
-  const [stats, setStats] = useState(() => loadStats(storageKey, migrate));
+  const [prefs, setPrefs] = useState(loadPrefs); // shared by every loot simulator
+  // With saving off, a visit starts fresh and nothing is written back.
+  const [stats, setStats] = useState(() => (prefs.save ? loadStats(storageKey, migrate) : {}));
+  const [confirm, setConfirm] = useState(null); // { title, body, label, action } while asking
   const [result, setResult] = useState(null); // { kind:'one', run } | { kind:'many', n, totals, uniques, pets } | { kind:'until', run, tries }
   const [bulkN, setBulkN] = useState(100); // how many raids the bulk button opens
   const [perspBy, setPerspBy] = useState({}); // raid id -> 'solo' | 'share' | 'team'
@@ -327,8 +403,15 @@ export function LootSimulator({
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
+    if (!prefs.save) return;
     try { localStorage.setItem(storageKey, JSON.stringify(stats)); } catch { /* fine */ }
-  }, [stats, storageKey]);
+  }, [stats, storageKey, prefs.save]);
+  useEffect(() => savePrefs(prefs), [prefs]);
+
+  // Anything that clears results goes through here: it asks first unless
+  // the player turned that off.
+  const askThen = (c) => (prefs.confirm ? setConfirm(c) : c.action());
+  const closeConfirm = useCallback(() => setConfirm(null), []);
 
   const raidValues = values[raidId];
   // Content without a team-size input (clue caskets) is always one record.
@@ -344,24 +427,40 @@ export function LootSimulator({
 
   const setValue = (key, v, also) => setValues((prev) => ({ ...prev, [raidId]: { ...prev[raidId], [key]: v, ...(also ?? {}) } }));
 
-  // uniques: [{ name, at }] where `at` is the completion within this batch.
-  const record = useCallback((completions, uniques, pets) => {
+  // uniques: [{ name, at }] where `at` is the completion within this batch;
+  // petsAt: the completions within the batch that gave the pet;
+  // loot: Map of everything the batch gave, for the running tally.
+  const record = useCallback((completions, uniques, petsAt, loot) => {
+    const pets = petsAt.length;
     setStats((prev) => {
       const s = { ...(prev[statsKey] ?? emptyStats()) };
       const startKc = s.kc;
+      if (!s.totals) { s.totals = {}; s.totalsFrom = s.kc; }
+      const totals = { ...s.totals };
+      for (const [name, t] of loot) {
+        totals[name] = { qty: (totals[name]?.qty ?? 0) + t.qty, unique: t.unique };
+      }
+      // Pets aren't loot entries, but they're part of what you walked away with.
+      if (pets && raid.pet) totals[raid.pet.name] = { qty: (totals[raid.pet.name]?.qty ?? 0) + pets, unique: true, pet: true };
+      s.totals = totals;
       s.kc += completions;
       s.pets += pets;
       // Counts completions with a unique, to match "expected": a boss kill
       // can hold several (the Sire's Unsired and its Font reward).
       s.uniqueCount += new Set(uniques.map((u) => u.at)).size;
-      for (const u of uniques) s.uniques = [...s.uniques, { name: u.name, kc: startKc + u.at }].slice(-40);
+      // The log keeps uniques and pets together, in the order they dropped.
+      const logged = [
+        ...uniques.map((u) => ({ name: u.name, kc: startKc + u.at })),
+        ...(raid.pet ? petsAt.map((at) => ({ name: raid.pet.name, kc: startKc + at, pet: true })) : []),
+      ].sort((a, b) => a.kc - b.kc);
+      s.uniques = [...s.uniques, ...logged].slice(-40);
       // The dry streak picks up after the batch's last purple.
       s.dry = uniques.length
         ? completions - Math.max(...uniques.map((u) => u.at))
         : s.dry + completions;
       return { ...prev, [statsKey]: s };
     });
-  }, [statsKey]);
+  }, [statsKey, raid]);
 
   const reveal = (res) => {
     clearTimeout(timer.current);
@@ -376,51 +475,97 @@ export function LootSimulator({
 
   const openOne = () => {
     const run = runRaid(effRaid, effValues);
-    record(1, uniquesOf(run).map((name) => ({ name, at: 1 })), run.pet ? 1 : 0);
-    reveal({ kind: 'one', run });
+    record(1, uniquesOf(run).map((name) => ({ name, at: 1 })), run.pet ? [1] : [], tally(new Map(), run.loot));
+    reveal({ kind: 'one', run, kc: raidStats.kc + 1 });
   };
 
   const openMany = (n) => {
     const agg = runMany(effRaid, effValues, n);
-    record(n, agg.uniques, agg.pets);
+    record(n, agg.uniques, agg.petsAt, agg.totals);
     reveal({ kind: 'many', n, teamN: persp === 'team' ? teamN : 0, ...agg });
   };
 
   const untilPurple = () => {
     let tries = 0;
     let run = null;
-    let pets = 0;
+    const petsAt = [];
+    const loot = new Map();
     do {
       run = runRaid(effRaid, effValues);
       tries++;
-      if (run.pet) pets++;
+      if (run.pet) petsAt.push(tries);
+      tally(loot, run.loot);
     } while (!run.unique && tries < UNTIL_CAP);
-    record(tries, uniquesOf(run).map((name) => ({ name, at: tries })), pets);
-    reveal({ kind: 'until', run, tries });
+    record(tries, uniquesOf(run).map((name) => ({ name, at: tries })), petsAt, loot);
+    reveal({ kind: 'until', run, tries, kc: raidStats.kc + tries });
   };
 
   // Chase a specific prize (a master clue, any 3rd age, the pet, …).
   const untilChase = (chase) => {
     let tries = 0;
     let run = null;
-    let pets = 0;
+    const petsAt = [];
     let found = false;
     const uniques = [];
+    const loot = new Map();
     do {
       run = runRaid(effRaid, effValues);
       tries++;
-      if (run.pet) pets++;
+      if (run.pet) petsAt.push(tries);
+      tally(loot, run.loot);
       for (const name of uniquesOf(run)) uniques.push({ name, at: tries });
       found = chase.test(run);
     } while (!found && tries < UNTIL_CAP);
-    record(tries, uniques, pets);
-    reveal({ kind: 'chase', run, tries, found, chase });
+    record(tries, uniques, petsAt, loot);
+    reveal({ kind: 'chase', run, tries, found, chase, kc: raidStats.kc + tries });
   };
 
-  const resetStats = () => setStats((prev) => ({ ...prev, [statsKey]: emptyStats() }));
+  const resetStats = () => askThen({
+    title: `Reset ${raid.name}?`,
+    body: `This clears your ${raidStats.kc.toLocaleString()} ${raidStats.kc === 1 ? s.noun : s.nouns}, `
+      + `${raidStats.uniqueCount.toLocaleString()} ${raidStats.uniqueCount === 1 ? s.unique : s.uniques} and the loot tally `
+      + `for ${raid.name}${hasTeam ? ` (${PERSPECTIVES.find((p) => p.id === persp).label})` : ''}. It can't be undone.`,
+    label: s.reset,
+    action: () => setStats((prev) => ({ ...prev, [statsKey]: emptyStats() })),
+  });
+
+  // Every loot simulator at once: bosses, raids and clue caskets.
+  const resetAll = () => askThen({
+    title: 'Reset all loot simulators?',
+    body: 'This clears every boss, raid and clue casket record, and every loot tally, saved in this browser. It can\'t be undone.',
+    label: 'Reset everything',
+    action: () => {
+      forgetAllResults();
+      setStats({});
+      setResult(null);
+    },
+  });
+
+  const toggleSave = (on) => {
+    if (on) { setPrefs((p) => ({ ...p, save: true })); return; }
+    askThen({
+      title: 'Stop saving results?',
+      body: 'This deletes the loot simulator results saved in this browser. What you see now stays until you leave the page.',
+      label: 'Stop saving',
+      action: () => {
+        forgetAllResults();
+        setPrefs((p) => ({ ...p, save: false }));
+      },
+    });
+  };
 
   const expected = raidStats.kc * chance;
   const onRate = raidStats.kc > 0 ? atLeastOnce(chance, raidStats.dry) : 0;
+
+  // Everything received since the last reset: pets, then uniques, then the
+  // rest by quantity.
+  const haul = useMemo(() => {
+    const rank = (t) => (t.pet ? 2 : t.unique ? 1 : 0);
+    return Object.entries(raidStats.totals ?? {})
+      .map(([name, t]) => ({ name, ...t }))
+      .sort((a, b) => rank(b) - rank(a) || b.qty - a.qty);
+  }, [raidStats.totals]);
+  const haulKills = raidStats.kc - (raidStats.totals ? raidStats.totalsFrom ?? 0 : raidStats.kc);
 
   const sortedTotals = useMemo(() => {
     if (!result || result.kind !== 'many') return [];
@@ -525,17 +670,14 @@ export function LootSimulator({
                 <button type="button" className="rl-btn" onClick={() => openMany(bulkN)} disabled={opening}>
                   Open ×{bulkN.toLocaleString()}
                 </button>
-                <input
-                  type="number"
+                <NumberBox
                   className="rl-range-num rl-bulk-num"
-                  min={1}
-                  max={100000}
                   value={bulkN}
+                  min={1}
+                  max={BULK_MAX}
+                  onChange={setBulkN}
+                  onEnter={() => { if (!opening) openMany(bulkN); }}
                   aria-label={`How many ${s.nouns} to open at once`}
-                  onChange={(e) => {
-                    const n = Math.floor(Number(e.target.value));
-                    setBulkN(Number.isFinite(n) ? Math.min(Math.max(n, 1), 100000) : 100);
-                  }}
                 />
               </span>
               {/* Nothing to wait for when no unique can drop (Jad, Zuk, a destroyed Araxxor). */}
@@ -627,7 +769,11 @@ export function LootSimulator({
                     />
                   ))}
                 </div>
-                {result.run.pet && <div className="rl-pet">🎉 {raid.pet.name} follows you home!</div>}
+                {result.run.pet && (
+                  <div className="rl-pet">
+                    🎉 {raid.pet.name} follows you home! <span className="rl-pet-kc">{s.noun} {result.kc.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             )}
             {!opening && result?.kind === 'many' && (
@@ -666,14 +812,17 @@ export function LootSimulator({
                     })}
                   </div>
                 )}
-                {result.uniques.length > 0 && (
+                {(result.uniques.length > 0 || result.petsAt?.length > 0) && (
                   <ul className="rl-many-log">
-                    {result.uniques.map((u, i) => {
+                    {[
+                      ...result.uniques,
+                      ...(raid.pet ? (result.petsAt ?? []).map((at) => ({ name: raid.pet.name, at, pet: true })) : []),
+                    ].sort((a, b) => a.at - b.at).map((u, i) => {
                       const ix = nameIndex.get(u.name.toLowerCase());
                       return (
-                        <li key={i}>
+                        <li key={i} className={u.pet ? 'pet' : ''}>
                           {ix != null && data && <ItemIcon data={data} index={ix} />}
-                          <span className="n">{u.name}</span>
+                          <span className="n">{u.name}{u.pet && <i className="rl-pet-tag">pet</i>}</span>
                           {u.recipient && <span className="who">{u.recipient}</span>}
                           <span className="kc">{s.noun} {u.at.toLocaleString()}</span>
                         </li>
@@ -723,9 +872,9 @@ export function LootSimulator({
                   {[...raidStats.uniques].reverse().map((u, i) => {
                     const ix = nameIndex.get(u.name.toLowerCase());
                     return (
-                      <li key={`${u.kc}-${i}`}>
+                      <li key={`${u.kc}-${i}`} className={u.pet ? 'pet' : ''}>
                         {ix != null && data && <ItemIcon data={data} index={ix} />}
-                        <span className="n">{u.name}</span>
+                        <span className="n">{u.name}{u.pet && <i className="rl-pet-tag">pet</i>}</span>
                         <span className="kc">kc {u.kc.toLocaleString()}</span>
                       </li>
                     );
@@ -736,6 +885,67 @@ export function LootSimulator({
             <button type="button" className="rl-btn rl-reset" onClick={resetStats}>{s.reset}</button>
           </section>
         </div>
+
+        {haul.length > 0 && (
+          <section className="rl-panel rl-haul" aria-label="All loot so far">
+            <div className="rl-haul-head">
+              <h3>All loot — {haulKills.toLocaleString()} {haulKills === 1 ? s.noun : s.nouns}</h3>
+              <small>
+                {haulKills < raidStats.kc
+                  ? `Counting from ${s.noun} ${(raidStats.kc - haulKills).toLocaleString()}; ${s.reset.toLowerCase()} to start fresh.`
+                  : `Everything since your last reset. ${haul.length} item${haul.length === 1 ? '' : 's'}.`}
+              </small>
+            </div>
+            <div className="rl-loot rl-haul-grid">
+              {haul.map((l) => (
+                <LootItem
+                  key={l.name}
+                  data={data}
+                  nameIndex={nameIndex}
+                  name={l.name}
+                  qty={l.qty}
+                  unique={l.unique}
+                  compact
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="rl-settings" aria-label="Loot simulator settings">
+          <label className="rl-setting">
+            <input type="checkbox" checked={prefs.save} onChange={(e) => toggleSave(e.target.checked)} />
+            Save results in this browser
+          </label>
+          <label className="rl-setting">
+            <input
+              type="checkbox"
+              checked={prefs.confirm}
+              onChange={(e) => setPrefs((p) => ({ ...p, confirm: e.target.checked }))}
+            />
+            Ask before clearing results
+          </label>
+          <button type="button" className="rl-btn rl-danger rl-reset-all" onClick={resetAll}>
+            Reset all loot simulators
+          </button>
+          <small className="rl-settings-note">
+            {prefs.save
+              ? 'Settings apply to every loot simulator: bosses, raids and clue caskets.'
+              : 'Results aren’t being saved: they last until you leave the page.'}
+          </small>
+        </section>
+
+        {confirm && (
+          <ConfirmDialog
+            {...confirm}
+            onCancel={closeConfirm}
+            onConfirm={(dontAsk) => {
+              if (dontAsk) setPrefs((p) => ({ ...p, confirm: false }));
+              confirm.action();
+              setConfirm(null);
+            }}
+          />
+        )}
 
         <p className="rl-credit">
           Drop rates and tables from the{' '}
@@ -749,13 +959,18 @@ export function LootSimulator({
 }
 
 export default function RaidLootSimulatorPage() {
+  // ?raid=toa opens on that raid (the raid landing pages link here).
+  const [params] = useSearchParams();
+  const raidParam = params.get('raid');
   return (
     <LootSimulator
+      key={raidParam ?? ''}
       title="Raid Loot Simulator"
       intro="Open the reward chest as many times as you like — same odds as the real thing, none of the deaths. Rates and tables follow the wiki; your tally is saved in this browser."
       contents={RAIDS}
-      storageKey="raid-loot-stats"
+      storageKey={LOOT_SIM_KEYS.raid}
       migrate
+      initialId={raidParam}
     />
   );
 }

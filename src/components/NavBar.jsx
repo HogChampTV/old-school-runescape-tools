@@ -1,16 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { navEntries } from '../site';
+import { NAV } from '../site';
 import './NavBar.css';
 
 const link = ({ isActive }) => (isActive ? 'nav-link active' : 'nav-link');
 
-/** A nav entry that opens a small menu of related tools. */
-function NavGroup({ label, tools }) {
+/** One tool in a menu: a card, a featured card, or a compact one-liner. */
+function MenuLink({ item }) {
+  const kind = item.featured ? 'featured' : item.compact ? 'compact' : '';
+  return (
+    <NavLink
+      to={item.path}
+      role="menuitem"
+      className={({ isActive }) => `nav-menu-link ${kind} ${isActive ? 'active' : ''}`}
+      style={item.accent ? { '--c': item.accent } : undefined}
+      title={item.compact ? item.blurb : undefined}
+    >
+      {item.compact && <span className="nav-dot" aria-hidden="true" />}
+      <b>{item.name}</b>
+      {!item.compact && <small>{item.blurb}</small>}
+    </NavLink>
+  );
+}
+
+/** A top-level nav entry that opens a menu of tools. */
+function NavGroup({ label, items }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { pathname } = useLocation();
-  const active = tools.some((t) => pathname.startsWith(t.path));
+  const active = items.some((t) => pathname.startsWith(t.path));
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -39,12 +57,7 @@ function NavGroup({ label, tools }) {
       </button>
       {open && (
         <div className="nav-menu" role="menu">
-          {tools.map((t) => (
-            <NavLink key={t.path} to={t.path} role="menuitem" className={({ isActive }) => `nav-menu-link ${isActive ? 'active' : ''}`}>
-              <b>{t.name}</b>
-              <small>{t.blurb}</small>
-            </NavLink>
-          ))}
+          {items.map((item) => <MenuLink key={item.path} item={item} />)}
         </div>
       )}
     </div>
@@ -60,9 +73,7 @@ export default function NavBar() {
       </NavLink>
       <div className="navbar-links">
         <NavLink to="/" end className={link}>Home</NavLink>
-        {navEntries().map((e) => (e.group
-          ? <NavGroup key={e.group} label={e.group} tools={e.tools} />
-          : <NavLink key={e.tool.path} to={e.tool.path} className={link}>{e.tool.name}</NavLink>))}
+        {NAV.map((g) => <NavGroup key={g.label} label={g.label} items={g.items} />)}
       </div>
     </nav>
   );

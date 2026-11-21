@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -8,6 +8,7 @@ import RaidLootSimulatorPage from './pages/tools/RaidLootSimulatorPage';
 import ClueCasketSimulatorPage from './pages/tools/ClueCasketSimulatorPage';
 import ToaSupplyPage from './pages/tools/ToaSupplyPage';
 import BossLootSimulatorPage from './pages/tools/BossLootSimulatorPage';
+import RaidHubPage from './pages/RaidHubPage';
 import './App.css';
 
 export default function App() {
@@ -22,8 +23,11 @@ export default function App() {
           <Route path="/loadout-creator" element={<LoadoutCreatorPage />} />
           <Route path="/raid-loot-simulator" element={<RaidLootSimulatorPage />} />
           <Route path="/clue-casket-simulator" element={<ClueCasketSimulatorPage />} />
-          <Route path="/toa-supply-generator" element={<ToaSupplyPage />} />
+          <Route path="/helpful-spirit-supply-viewer" element={<ToaSupplyPage />} />
+          {/* The tool's old address, kept so existing links still land. */}
+          <Route path="/toa-supply-generator" element={<Navigate to="/helpful-spirit-supply-viewer" replace />} />
           <Route path="/boss-loot-simulator" element={<BossLootSimulatorPage />} />
+          <Route path="/raids/:slug" element={<RaidHubPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

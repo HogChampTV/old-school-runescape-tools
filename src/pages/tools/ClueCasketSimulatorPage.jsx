@@ -1,4 +1,5 @@
 import { LootSimulator } from './RaidLootSimulatorPage.jsx';
+import { LOOT_SIM_KEYS } from './loot-sim-prefs.js';
 import { CLUES } from './clue-loot-data.js';
 
 // Clue caskets speak their own dialect of the simulator.
@@ -24,7 +25,7 @@ export default function ClueCasketSimulatorPage() {
       title="Clue Casket Simulator"
       intro="Open reward caskets from beginner to master at the wiki's real rates — no steps, no puzzle boxes. Your tally is saved in this browser."
       contents={CLUES}
-      storageKey="clue-loot-stats"
+      storageKey={LOOT_SIM_KEYS.clue}
       strings={CLUE_STRINGS}
     />
   );
