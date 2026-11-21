@@ -1013,6 +1013,85 @@
   color: #00ff80;
 }
 
+/* ----- drop rates for the uniques and pet ----- */
+
+.rl-rates {
+  margin-top: 1.25rem;
+}
+
+.rl-rates-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 4px 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-rates-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2px 0.4rem 2px 2px;
+  border-bottom: 1px solid #2e2920;
+  font-size: 0.85rem;
+}
+
+.rl-rates-list .n {
+  flex: 1;
+  min-width: 0;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Item names link to the wiki, quietly: they look like text until hovered. */
+.rl-rates-list .n a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rl-rates-list .n a:hover,
+.rl-rates-list .n a:focus-visible {
+  color: var(--raid-accent);
+  text-decoration: underline;
+}
+
+.rl-wiki-link {
+  display: inline-block;
+  margin: 0.1rem 0 0.6rem;
+  color: #9c8a63;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rl-wiki-link:hover {
+  color: var(--raid-accent);
+  text-decoration: underline;
+}
+
+.rl-rates-list b {
+  color: var(--raid-accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rl-rates-list li.pet .n,
+.rl-rates-list li.pet b {
+  color: #ffd166;
+}
+
+.rl-rates-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  flex: none;
+}
+
 /* ----- all loot since the last reset ----- */
 
 .rl-haul {

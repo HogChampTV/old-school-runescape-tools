@@ -664,11 +664,21 @@ export const RAIDS = [
 // purples the current setup can roll (Challenge Mode changes the table),
 // and "Until pet".
 for (const raid of RAIDS) {
-  raid.chaseItems = (values) => {
-    const table = typeof raid.uniques === 'function' ? raid.uniques(values) : raid.uniques;
-    return table.filter((u) => u.weight > 0).map((u) => u.name);
+  const purples = (values) => (typeof raid.uniques === 'function' ? raid.uniques(values) : raid.uniques)
+    .filter((u) => u.weight > 0);
+  raid.chaseItems = (values) => purples(values).map((u) => u.name);
+  // [[name, chance per raid]]: the purple chance split by each item's
+  // weight. `config` is the view being shown (solo / your share / team),
+  // whose purple chance differs from the raw raid's.
+  raid.uniqueRates = (values, config = raid) => {
+    const table = purples(values);
+    const total = table.reduce((n, u) => n + u.weight, 0);
+    const p = config.uniqueChance(values);
+    return table.map((u) => [u.name, (p * u.weight) / total]);
   };
   raid.chases = [{ label: 'Until pet', done: raid.pet.name, test: (run) => run.pet }];
   // A pet earns the gold "Legendary loot" banner, as it does for bosses.
   raid.legendary = { pet: true };
+  // The wiki page (and section) the full reward tables live on.
+  raid.wiki = `${raid.name}#Rewards`;
 }

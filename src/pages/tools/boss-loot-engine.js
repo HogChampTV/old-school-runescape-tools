@@ -202,7 +202,9 @@ export function bossUniques(boss, values) {
       if (e.pet) continue;
       if (e.table) walk(tableOf(e.table), pe * (e.rolls ?? 1), perKill);
       else if (e.items) for (const it of e.items) { if (e.unique || it.unique) put(it.name, perKill(pe)); }
-      else if (e.set) { if (e.unique) for (const n of e.set) put(n, perKill(pe / e.set.length)); }
+      // A set hit always gives the next piece you're missing, so each piece
+      // is listed at the set's full chance, as the wiki lists them.
+      else if (e.set) { if (e.unique) for (const n of e.set) put(n, perKill(pe)); }
       else if (e.unique) put(e.name, perKill(pe));
       if (e.then) walk(e.then, pe, perKill);
     }
@@ -239,6 +241,8 @@ export function bossConfig(boss, category) {
     inputs: boss.inputs ?? [],
     teamKey: boss.teamKey,
     uniqueChance: (v) => bossUniqueChance(boss, v),
+    // [[name, chance per kill]] for each unique, for the drop-rate display.
+    uniqueRates: (v) => [...bossUniques(boss, v)],
     kill: (v, rng) => killBoss(boss, v, rng, state),
     pet: boss.pet && { name: boss.pet.name, chance: (v) => resolve(boss.pet.p, v) },
     chases: boss.pet ? [{ label: 'Until pet', done: boss.pet.name, test: (run) => run.pet }] : [],

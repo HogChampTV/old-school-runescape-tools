@@ -121,6 +121,21 @@ function RaidEmblem({ raid, data, nameIndex, className = '' }) {
   return <span className={`${className} rl-emblem-item`}><ItemIcon data={data} index={ix} /></span>;
 }
 
+/** The wiki page for an item or page title ("Hydra's claw", "Theatre of Blood#Rewards"). */
+function wikiUrl(title) {
+  const [page, section] = title.split('#');
+  const slug = (s) => encodeURIComponent(s.replace(/ /g, '_')).replace(/%2F/g, '/');
+  return `https://oldschool.runescape.wiki/w/${slug(page)}${section ? `#${slug(section)}` : ''}`;
+}
+
+/** A chance as the wiki writes it: "1/520", "1/4.6"; tiny or zero chances read sensibly. */
+function oneIn(p) {
+  if (!(p > 0)) return 'never';
+  if (p >= 1) return 'always';
+  const n = 1 / p;
+  return `1/${n < 100 ? n.toLocaleString(undefined, { maximumFractionDigits: 1 }) : Math.round(n).toLocaleString()}`;
+}
+
 /** The game's stack label: exact under 100K, then "123K" (white), then "45M" (green). */
 function stackLabel(qty) {
   if (qty < 100000) return { text: qty.toLocaleString(), tier: '' };
@@ -429,6 +444,16 @@ export function LootSimulator({
   const chaseItems = (typeof raid.chaseItems === 'function' ? raid.chaseItems(effValues) : raid.chaseItems) ?? [];
   const pickedChase = chaseItems.includes(chaseItem) ? chaseItem : '';
 
+  // Drop rates for the uniques and pet at the current setup and view.
+  const rates = raid.uniqueRates ? raid.uniqueRates(effValues, effRaid) : null;
+  const rateOf = new Map(rates ?? []);
+  let petRate = null;
+  if (rates && effRaid.pet) {
+    petRate = effRaid.pet.onUnique
+      ? chance * effRaid.pet.chance(effValues, { unique: true })
+      : effRaid.pet.chance(effValues, { unique: null });
+  }
+
   const setValue = (key, v, also) => setValues((prev) => ({ ...prev, [raidId]: { ...prev[raidId], [key]: v, ...(also ?? {}) } }));
 
   // uniques: [{ name, at }] where `at` is the completion within this batch;
@@ -701,7 +726,9 @@ export function LootSimulator({
                     aria-label="Item to roll until"
                   >
                     <option value="">Until a specific item…</option>
-                    {chaseItems.map((n) => <option key={n} value={n}>{n}</option>)}
+                    {chaseItems.map((n) => (
+                      <option key={n} value={n}>{rateOf.has(n) ? `${n} — ${oneIn(rateOf.get(n))}` : n}</option>
+                    ))}
                   </select>
                   <button
                     type="button"
@@ -889,6 +916,38 @@ export function LootSimulator({
             <button type="button" className="rl-btn rl-reset" onClick={resetStats}>{s.reset}</button>
           </section>
         </div>
+
+        {rates && rates.length > 0 && (
+          <section className="rl-panel rl-rates" aria-label="Drop rates">
+            <div className="rl-haul-head">
+              <h3>Drop rates</h3>
+              <small>Chance per {s.noun} with your current setup{hasTeam ? ` (${PERSPECTIVES.find((p) => p.id === persp).label})` : ''}.</small>
+            </div>
+            {raid.wiki && (
+              <a className="rl-wiki-link" href={wikiUrl(raid.wiki)} target="_blank" rel="noopener noreferrer">
+                Full drop table on the wiki ↗
+              </a>
+            )}
+            <ul className="rl-rates-list">
+              {[
+                ...(petRate != null ? [{ name: raid.pet.name, p: petRate, pet: true }] : []),
+                ...[...rates].sort((a, b) => b[1] - a[1]).map(([name, p]) => ({ name, p })),
+              ].map((r) => {
+                const ix = nameIndex.get(r.name.toLowerCase());
+                return (
+                  <li key={r.name} className={r.pet ? 'pet' : ''}>
+                    <span className="rl-rates-icon">{ix != null && data && <ItemIcon data={data} index={ix} />}</span>
+                    <span className="n">
+                      <a href={wikiUrl(r.name)} target="_blank" rel="noopener noreferrer" title={`${r.name} on the wiki`}>{r.name}</a>
+                      {r.pet && <i className="rl-pet-tag">pet</i>}
+                    </span>
+                    <b title={`${(r.p * 100).toPrecision(3)}%`}>{oneIn(r.p)}</b>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         {haul.length > 0 && (
           <section className="rl-panel rl-haul" aria-label="All loot so far">
