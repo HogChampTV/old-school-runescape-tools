@@ -424,6 +424,10 @@ export function LootSimulator({
   const statsKey = `${raidId}:${persp}`;
   const raidStats = stats[statsKey] ?? emptyStats();
   const chance = effRaid.uniqueChance(effValues);
+  // The "Until <item>" choices may depend on the setup (CoX Challenge Mode);
+  // a pick the current setup can't roll is dropped.
+  const chaseItems = (typeof raid.chaseItems === 'function' ? raid.chaseItems(effValues) : raid.chaseItems) ?? [];
+  const pickedChase = chaseItems.includes(chaseItem) ? chaseItem : '';
 
   const setValue = (key, v, also) => setValues((prev) => ({ ...prev, [raidId]: { ...prev[raidId], [key]: v, ...(also ?? {}) } }));
 
@@ -689,24 +693,24 @@ export function LootSimulator({
                   {c.label}
                 </button>
               ))}
-              {raid.chaseItems?.length > 1 && (
+              {chaseItems.length > 1 && (
                 <span className="rl-chase-item">
                   <select
-                    value={chaseItem}
+                    value={pickedChase}
                     onChange={(e) => setChaseItem(e.target.value)}
                     aria-label="Item to roll until"
                   >
                     <option value="">Until a specific item…</option>
-                    {raid.chaseItems.map((n) => <option key={n} value={n}>{n}</option>)}
+                    {chaseItems.map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                   <button
                     type="button"
                     className="rl-btn"
-                    disabled={opening || !chaseItem}
+                    disabled={opening || !pickedChase}
                     onClick={() => untilChase({
-                      label: chaseItem,
-                      done: chaseItem,
-                      test: (run) => uniquesOf(run).includes(chaseItem),
+                      label: pickedChase,
+                      done: pickedChase,
+                      test: (run) => uniquesOf(run).includes(pickedChase),
                     })}
                   >
                     Go

@@ -659,3 +659,16 @@ export const RAIDS = [
     pet: { name: 'Orion', chance: () => 1 / 750 },
   },
 ];
+
+// Chases shared by every raid: an "Until <purple>" chooser listing the
+// purples the current setup can roll (Challenge Mode changes the table),
+// and "Until pet".
+for (const raid of RAIDS) {
+  raid.chaseItems = (values) => {
+    const table = typeof raid.uniques === 'function' ? raid.uniques(values) : raid.uniques;
+    return table.filter((u) => u.weight > 0).map((u) => u.name);
+  };
+  raid.chases = [{ label: 'Until pet', done: raid.pet.name, test: (run) => run.pet }];
+  // A pet earns the gold "Legendary loot" banner, as it does for bosses.
+  raid.legendary = { pet: true };
+}
