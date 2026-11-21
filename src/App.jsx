@@ -6,6 +6,7 @@ import TzhaarNameGeneratorPage from './pages/tools/TzhaarNameGeneratorPage';
 import LoadoutCreatorPage from './pages/tools/LoadoutCreatorPage';
 import RaidLootSimulatorPage from './pages/tools/RaidLootSimulatorPage';
 import ClueCasketSimulatorPage from './pages/tools/ClueCasketSimulatorPage';
+import ToaSupplyPage from './pages/tools/ToaSupplyPage';
 import './App.css';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/loadout-creator" element={<LoadoutCreatorPage />} />
           <Route path="/raid-loot-simulator" element={<RaidLootSimulatorPage />} />
           <Route path="/clue-casket-simulator" element={<ClueCasketSimulatorPage />} />
+          <Route path="/toa-supply-generator" element={<ToaSupplyPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

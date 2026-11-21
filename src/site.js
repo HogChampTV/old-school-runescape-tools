@@ -14,6 +14,11 @@ export const TOOLS = [
     blurb: 'Open the reward chest of all four raids with real drop rates. Go dry for free.',
   },
   {
+    path: '/toa-supply-generator',
+    name: 'ToA Supply Generator',
+    blurb: 'See what the Helpful Spirit offers under every supply invocation, and roll your own offer.',
+  },
+  {
     path: '/clue-casket-simulator',
     name: 'Clue Casket Simulator',
     blurb: 'Open reward caskets from beginner to master at wiki rates. Third age not guaranteed.',

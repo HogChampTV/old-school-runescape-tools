@@ -1,0 +1,574 @@
+.ts {
+  --ts-accent: #e0b84a;
+  --ts-life: #74c77d;
+  --ts-chaos: #b98aff;
+  --ts-power: #e66b5c;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.ts-head h2 {
+  margin: 0 0 0.3rem;
+  color: var(--ts-accent);
+}
+
+.ts-head p {
+  margin: 0;
+  max-width: 62ch;
+  color: #bbb;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ts-panel {
+  background: #2b241b;
+  border: 1px solid #4d4234;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+/* ----- invocation toggles ----- */
+
+.ts-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.6rem;
+  align-items: flex-end;
+  border-top: 3px solid var(--ts-accent);
+}
+
+.ts-group h4,
+.ts-visit h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9c8a63;
+}
+
+.ts-invos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ts-invo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #3e3529;
+  border: 1px solid #241f17;
+  border-radius: 5px;
+  color: #bbb;
+  padding: 4px 10px 4px 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.ts-invo:hover {
+  background: #4a4030;
+}
+
+.ts-invo.picked {
+  border-color: var(--ts-accent);
+  color: var(--ts-accent);
+  background: rgba(224, 184, 74, 0.08);
+  box-shadow: 0 0 12px rgba(224, 184, 74, 0.18);
+}
+
+.ts-invo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  overflow: hidden;
+  flex: none;
+}
+
+.ts-invo-icon .loadout-icon {
+  transform: scale(0.78);
+}
+
+.ts-invo-none {
+  color: #776a52;
+}
+
+.ts-invo-name {
+  white-space: nowrap;
+}
+
+.ts-invo-meta {
+  color: #776a52;
+  font-size: 0.7rem;
+}
+
+.ts-invo.picked .ts-invo-meta {
+  color: #b99a4a;
+}
+
+.ts-level {
+  margin-left: auto;
+  color: #9c8a63;
+  font-size: 0.8rem;
+}
+
+.ts-level b {
+  color: var(--ts-accent);
+}
+
+/* ----- the grid ----- */
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: 180px repeat(3, 1fr);
+  gap: 4px;
+}
+
+.ts-row {
+  display: contents;
+}
+
+.ts-col-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.3rem 0 0.5rem;
+  border-bottom: 2px solid var(--c);
+}
+
+.ts-col-head b {
+  color: var(--c);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.ts-col-head small {
+  color: #776a52;
+  font-size: 0.7rem;
+}
+
+.ts-life { --c: var(--ts-life); }
+.ts-chaos { --c: var(--ts-chaos); }
+.ts-power { --c: var(--ts-power); }
+
+.ts-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #241e16;
+  border: 1px solid #3a3226;
+  border-radius: 5px;
+  color: #bbb;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.ts-row-head b {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.ts-row-head small {
+  color: #776a52;
+  font-size: 0.68rem;
+}
+
+.ts-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 4px;
+  background: #241e16;
+  border: 1px solid #3a3226;
+  border-radius: 5px;
+  padding: 6px;
+  min-height: 56px;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.ts-cell-label {
+  display: none;
+}
+
+/* Rows that aren't your invocation fade back; yours lights up. */
+.ts-row:not(.active) > * {
+  opacity: 0.5;
+}
+
+.ts-row:not(.active) > *:hover {
+  opacity: 0.85;
+}
+
+.ts-row.active > .ts-row-head {
+  border-color: var(--ts-accent);
+  color: var(--ts-accent);
+  background: rgba(224, 184, 74, 0.08);
+}
+
+.ts-row.active > .ts-cell {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 8%, #241e16);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--c) 12%, transparent);
+}
+
+.ts-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #3e3529;
+  border: 1px solid #2c261d;
+  border-radius: 4px;
+  padding: 2px 7px 2px 2px;
+  font-size: 0.72rem;
+  color: #ccc;
+  cursor: help;
+}
+
+.ts-chip {
+  position: relative;
+  font-family: inherit;
+}
+
+.ts-chip:hover,
+.ts-chip.open {
+  border-color: var(--c);
+}
+
+.ts-chip b {
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.1em;
+}
+
+/* Odds pop-over: what each amount's chance is. */
+.ts-odds {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 190px;
+  padding: 8px 10px;
+  background: #1a150f;
+  border: 1px solid var(--c);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  text-align: left;
+  cursor: default;
+  animation: ts-in 0.18s ease-out both;
+}
+
+.ts-odds-title {
+  color: var(--c);
+  font-weight: 700;
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+
+.ts-odds-row {
+  display: grid;
+  grid-template-columns: 2.6em 1fr 3.2em;
+  align-items: center;
+  gap: 6px;
+  color: #ccc;
+  font-size: 0.72rem;
+}
+
+.ts-odds-row b {
+  text-align: right;
+  text-decoration: none !important;
+}
+
+.ts-odds-bar {
+  height: 6px;
+  background: #3a3226;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ts-odds-bar span {
+  display: block;
+  height: 100%;
+  background: var(--c);
+}
+
+.ts-odds small {
+  margin-top: 2px;
+  color: #9c8a63;
+  font-size: 0.66rem;
+}
+
+/* Lift the cell holding an open pop-over above the rows after it. */
+.ts-cell:has(.ts-chip.open) {
+  position: relative;
+  z-index: 30;
+  opacity: 1 !important;
+}
+
+.ts-chip-name {
+  color: #9c8a63;
+}
+
+.ts-chip-name i {
+  margin-left: 4px;
+  font-style: normal;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--ts-chaos);
+}
+
+.ts-chip.assumed {
+  border-style: dashed;
+  border-color: #8a7449;
+}
+
+.ts-chip.blocked,
+.ts-slot.blocked {
+  position: relative;
+  opacity: 0.55;
+}
+
+.ts-chip.blocked b,
+.ts-chip.blocked .ts-chip-name {
+  text-decoration: line-through;
+  text-decoration-color: #e66b5c;
+}
+
+.ts-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  overflow: hidden;
+  flex: none;
+}
+
+.ts-icon .loadout-icon {
+  transform: scale(0.78);
+}
+
+.ts-effects {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #bbb;
+  font-size: 0.8rem;
+}
+
+.ts-effects b {
+  color: var(--ts-accent);
+}
+
+/* ----- generator ----- */
+
+.ts-gen {
+  border-top: 3px solid var(--ts-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ts-gen-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ts-gen h3 {
+  margin: 0;
+  color: var(--ts-accent);
+  font-size: 1rem;
+}
+
+.ts-gen-head p {
+  margin: 0.2rem 0 0;
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.ts-roll {
+  background: linear-gradient(180deg, #f0cd6a, #b88a26);
+  border: none;
+  border-radius: 5px;
+  color: #1a140d;
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(224, 184, 74, 0.35);
+}
+
+.ts-roll:hover {
+  filter: brightness(1.08);
+}
+
+.ts-visits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ts-visit {
+  animation: ts-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation-delay: var(--d);
+}
+
+@keyframes ts-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ts-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ts-offer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #241e16;
+  border: 1px solid #3a3226;
+  border-left: 3px solid var(--c);
+  border-radius: 5px;
+  padding: 6px 8px;
+}
+
+.ts-offer-name {
+  width: 3.6rem;
+  color: var(--c);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.ts-offer-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ts-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  background: #3e3529;
+  border: 1px solid #2c261d;
+  border-radius: 4px;
+}
+
+.ts-slot .ts-icon {
+  width: 36px;
+  height: 32px;
+}
+
+.ts-slot .ts-icon .loadout-icon {
+  transform: none;
+}
+
+.ts-qty {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  color: #ffff00;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.ts-credit {
+  margin: 0;
+  color: #776a52;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.ts-credit a {
+  color: #9c8a63;
+}
+
+/* ----- phones ----- */
+
+@media (max-width: 720px) {
+  .ts-level {
+    margin-left: 0;
+  }
+
+  .ts-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ts-corner,
+  .ts-col-head {
+    display: none;
+  }
+
+  /* Each invocation becomes its own card with the three bundles inside. */
+  .ts-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid #3a3226;
+  }
+
+  .ts-row:last-child {
+    border-bottom: none;
+  }
+
+  .ts-cell {
+    min-height: 0;
+  }
+
+  .ts-cell-label {
+    display: block;
+    width: 100%;
+    color: var(--c);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ts-chip {
+    font-size: 0.78rem;
+    padding: 3px 8px 3px 2px;
+  }
+
+  /* A tapped item opens in place: full width, odds underneath. */
+  .ts-chip.open {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+  }
+
+  .ts-odds {
+    position: static;
+    flex-basis: 100%;
+    min-width: 0;
+    margin: 6px 0 2px 2px;
+    box-shadow: none;
+  }
+
+  .ts-visits {
+    grid-template-columns: 1fr;
+  }
+}
